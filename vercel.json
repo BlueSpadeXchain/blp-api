@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "src": "api/info/info.go",
+      "dest": "/api/info/info.go"
+    },
+    {
+      "src": "api/order/order.go",
+      "dest": "/api/order/order.go"
+    }
+  ]
+}
