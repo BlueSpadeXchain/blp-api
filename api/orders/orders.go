@@ -6,37 +6,42 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/supabase/postgrest-go"
+	"github.com/supabase-community/postgrest-go"
 	"github.com/vercel/go-bridge/go/bridge"
 	"golang.org/x/crypto/sha3"
 )
 
 type OrderRequest struct {
-	Signer    string `json:"signer"`
-	ChainId   int    `json:"chainId"`
-	MessageId string `json:"messageId"`
-	OrderData string `json:"orderData"`
-	Signature string `json:"signature"`
+	Signer    string    `json:"signer"`
+	CreatedOn string    `json:"createdOn"`
+	ChainId   string    `json:"chainId"`
+	Order     OrderData `json:"order"`
+	MessageId string    `json:"messageId"`
+	Signature string    `json:"signature"`
+	Nonce     int64     `json:"nonce"`
+}
+
+// actually we don't need to store the hash or signature on the order, only for message validity
+
+type OrderData struct {
+	OrderId          string `json:"orderId"`
+	NetValue         string `json:"netValue"`
+	Amount           string `json:"amount"`
+	Collateral       string `json:"collateral"`
+	MarkPrice        string `json:"markPrice"`
+	EntryPrice       string `json:"EntryPrice"`
+	LiquidationPrice string `json:"liquidationPrice"`
 }
 
 type OrderResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-	Data    *Order `json:"data,omitempty"`
-}
-
-type Order struct {
-	ID        string `json:"id"`
-	Signer    string `json:"signer"`
-	ChainId   int    `json:"chainId"`
-	MessageId string `json:"messageId"`
-	OrderData string `json:"orderData"`
-	Status    string `json:"status"`
+	Success bool       `json:"success"`
+	Message string     `json:"message,omitempty"`
+	Data    *OrderData `json:"data,omitempty"` // this will assign a new orderId if not already applied
 }
 
 func validateSignature(order OrderRequest) bool {
 	hash := sha3.NewLegacyKeccak256()
-	rlp.Encode(hash, []interface{}{order.Signer, order.ChainId, order.MessageId, order.OrderData})
+	rlp.Encode(hash, []interface{}{order.Signer, order.ChainId, order.MessageId, order.Order})
 	expectedHash := hash.Sum(nil)
 	sigPublicKey, err := crypto.SigToPub(expectedHash, []byte(order.Signature))
 	if err != nil {
@@ -45,7 +50,7 @@ func validateSignature(order OrderRequest) bool {
 	return crypto.PubkeyToAddress(*sigPublicKey).Hex() == order.Signer
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	var orderReq OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -73,7 +78,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add the order to the database
-	order := Order{
+	order := OrderData{
 		Signer:    orderReq.Signer,
 		ChainId:   orderReq.ChainId,
 		MessageId: orderReq.MessageId,
@@ -95,5 +100,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	bridge.Start(handler)
+	bridge.Start(Handler)
 }
+
+// database needs the fields
+// data
+// values
+// hash
+// signer
+// and when a submission is made we need to have a valid signature to go with it
+// and when an edit is made we need a valid signature, and then delete and replace the position
+//		the latter might be weird since we are actually a perp (not limit orders)

@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	InfoHandler "blp-api/api/info.go"
-	OrderHandler "blp-api/api/order.go"
+	InfoHandler "blp-api/api/info"
+	OrderHandler "blp-api/api/order"
+	WebSocket "blp-api/ws"
 
 	"github.com/joho/godotenv"
 )
@@ -19,6 +20,7 @@ func main() {
 
 	http.HandleFunc("/api/order", OrderHandler.Handler)
 	http.HandleFunc("/api/info", InfoHandler.Handler)
+	http.HandleFunc("/ws", WebSocket.Handler)
 
 	log.Println("Starting server on :8081")
 	log.Fatal(http.ListenAndServe(":8081", nil))
