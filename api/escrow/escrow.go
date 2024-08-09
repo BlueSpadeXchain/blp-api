@@ -13,8 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-
-	// "github.com/ethereum/go-ethereum/ethclient"
 	"github.com/joho/godotenv"
 	"github.com/supabase-community/supabase-go"
 )
@@ -43,14 +41,6 @@ func main() {
 		log.Fatal("Required environment variables are not set")
 	}
 
-	// Connect to the Ethereum network
-	client, err := ethclient.Dial(sepoliaWS) // Change to correct network
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Connected to Ethereum network")
-
 	// Initialize Supabase client
 	options := &supabase.ClientOptions{}
 	supabaseClient, err := supabase.NewClient(supabaseURL, supabaseKey, options)
@@ -58,114 +48,58 @@ func main() {
 		log.Fatalf("cannot initialize client: %v", err)
 	}
 
-	// Fetch data from the 'users' table
-	data, count, err := supabaseClient.From("users").Select("*", "exact", false).Execute()
-	if err != nil {
-		log.Fatalf("Failed to execute query: %v", err)
-	}
-
-	// Convert the fetched data to a slice of maps
-	var results []map[string]interface{}
-	if err := json.Unmarshal(data, &results); err != nil {
-		log.Fatalf("Failed to unmarshal data: %v", err)
-	}
-
-	// Iterate through each user and print the details
-	for _, userData := range results {
-		fmt.Printf("Signer: %s\n", userData["signer"])
-		fmt.Printf("Date Created: %s\n", userData["date_created"])
-
-		// Convert balances from JSONB to plain text
-		if balanceData, ok := userData["balances"].(string); ok {
-			var balances map[string]string
-			if err := json.Unmarshal([]byte(balanceData), &balances); err != nil {
-				log.Printf("Failed to unmarshal balances: %v\n", err)
-			} else {
-				fmt.Println("Balances:")
-				for key, value := range balances {
-					fmt.Printf("  %s: %s\n", key, value)
-				}
-			}
+	for {
+		err := startListening(supabaseClient, sepoliaWS, escrowAddress)
+		if err != nil {
+			fmt.Printf("Connection lost. Attempting to reconnect in 5 seconds...\n")
+			time.Sleep(5 * time.Second)
 		}
-		fmt.Println("---")
 	}
+}
 
-	fmt.Printf("Total Records: %d\n", count)
-	fmt.Println("Connected to Supabase")
+func startListening(supabaseClient *supabase.Client, sepoliaWS, escrowAddress string) error {
+	// Connect to the Ethereum network
+	client, err := ethclient.Dial(sepoliaWS)
+	if err != nil {
+		return fmt.Errorf("failed to connect to Ethereum network: %v", err)
+	}
+	defer client.Close()
+
+	fmt.Println("Connected to Ethereum network")
 
 	// Address of the deployed contract
 	contractAddress := common.HexToAddress(escrowAddress)
 	contract, err := bindings.NewBindings(contractAddress, client)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to bind to deployed contract: %v", err)
 	}
 	fmt.Printf("contract: %s\n", contractAddress)
-
-	// Example deposit event data
-	// signer := "0xB9c28690C461C68190cc44739b82863F73dA9E22"
-	// dateCreated := "2024-08-05T16:40:06"
-	// assetAddress := "0x0000000000000000000000000000000000000000"
-	// assetAmount := "10000000000000"
-
-	// Create the user with the deposit event data
-	// err = createUser(supabaseClient, signer, dateCreated, assetAddress, assetAmount)
-	// if err != nil {
-	// 	fmt.Printf("Error creating user: %v\n", err)
-	// }
-
-	// signer = "0xB9c28690C461C68190cc44739b82863F73dA9E22"
-	// dateCreated = "2024-08-05T16:40:06"
-	// assetAddress = "0x0000000000000000000000000000000000000002"
-	// assetAmount = "20000000000000"
-
-	// find the matching signer from users database
-	// data, _, err = supabaseClient.From("users").Select("*", "exact", false).Filter("signer", "eq", signer).Limit(1, "").Execute()
-
-	// var results2 []map[string]interface{}
-	// if err := json.Unmarshal(data, &results2); err != nil {
-	// 	log.Fatalf("Failed to unmarshal data: %v", err)
-	// }
-	// // fmt.Printf("current result2: %s\n", results2)
-	// for _, userData := range results2 {
-	// 	if balanceData, ok := userData["balances"].(string); ok {
-	// 		// fmt.Printf("raw balance data: %s\n", balanceData)
-	// 		var balances map[string]string
-
-	// 		if err := json.Unmarshal([]byte(balanceData), &balances); err != nil {
-	// 			log.Printf("Failed to unmarshal balances: %v\n", err)
-	// 		}
-	// 		// fmt.Printf("raw balance data2: %s\n", balances)
-	// 		err := updateBalance(supabaseClient, userData, assetAddress, assetAmount)
-	// 		if err != nil {
-	// 			fmt.Printf("Error update balance: %v\n", err)
-	// 		}
-	// 	}
-	// }
-
-	// log.Println("User inserted successfully")
 
 	// Subscribe to Deposit events
 	depositEvent := make(chan *bindings.BindingsDeposit)
 	sub, err := contract.WatchDeposit(&bind.WatchOpts{Context: context.Background()}, depositEvent)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to subscribe to Deposit events: %v", err)
 	}
+	defer sub.Unsubscribe()
 
 	fmt.Println("Listening for Deposit events...")
 
 	for {
 		select {
 		case err := <-sub.Err():
-			log.Fatal(err)
+			log.Printf("WebSocket error: %v", err)
+			return fmt.Errorf("WebSocket error: %v", err)
 		case event := <-depositEvent:
 			fmt.Printf("Deposit event: Asset=%s From=%s Amount=%s\n", event.Asset.Hex(), event.From.Hex(), event.Amount.String())
 			// Update the user balance in the Supabase database
 			signer := event.From.Hex()
 			fmt.Printf("signer found: %s\n", signer)
 
-			data, _, err = supabaseClient.From("users").Select("*", "exact", false).Filter("signer", "eq", signer).Limit(1, "").Execute()
+			data, _, err := supabaseClient.From("users").Select("*", "exact", false).Filter("signer", "eq", signer).Limit(1, "").Execute()
 			if err != nil {
 				fmt.Printf("Failed to execute query: %v", err)
+				continue
 			}
 
 			if string(data) != "[]" {
@@ -187,13 +121,12 @@ func main() {
 					}
 				}
 			} else {
-				createUser(supabaseClient, event.From.Hex(), time.Unix(int64(event.Raw.BlockNumber), 0).Format(time.RFC3339), event.Asset.Hex(), event.Amount.String())
+				err = createUser(supabaseClient, event.From.Hex(), time.Unix(int64(event.Raw.BlockNumber), 0).Format(time.RFC3339), event.Asset.Hex(), event.Amount.String())
 				if err != nil {
 					fmt.Printf("Error create user: %v\n", err)
 				}
 			}
 
-			//func updateBalance(client *supabase.Client, user map[string]interface{}, assetAddress string, assetAmount string) error {
 			// Store the event log in the Supabase database
 			storeEventLog(supabaseClient, event)
 		}
