@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	InfoHandler "blp-api/api/info"
-	OrderHandler "blp-api/api/order"
-	WebSocket "blp-api/ws"
+	InfoHandler "github.com/BlueSpadeXchain/blp-api/api/info"
+	OrderHandler "github.com/BlueSpadeXchain/blp-api/api/orders"
+	WebSocket "github.com/BlueSpadeXchain/blp-api/ws"
 
 	"github.com/joho/godotenv"
 )

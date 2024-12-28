@@ -1,12 +1,10 @@
 {
+  "builds": [
+    { "src": "api/info/info.go", "use": "@vercel/go" },
+    { "src": "api/order/order.go", "use": "@vercel/go" }
+  ],
   "routes": [
-    {
-      "src": "api/info/info.go",
-      "dest": "/api/info/info.go"
-    },
-    {
-      "src": "api/order/order.go",
-      "dest": "/api/order/order.go"
-    }
+    { "src": "/api/info", "dest": "api/info/handler.go" },
+    { "src": "/api/order", "dest": "api/order/handler.go" }
   ]
 }

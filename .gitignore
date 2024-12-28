@@ -6,7 +6,6 @@
 # Folders
 _vendor/
 bin/
-pkg/
 
 # Executables
 
@@ -26,3 +25,5 @@ pkg/
 
 # Environment variables file
 .env
+
+.VSCodeCounter

@@ -10,6 +10,8 @@ type Task struct {
 	Data       interface{} // This can be the data you need to process
 }
 
+// we need to figure out processing one order
+// then we need to modify this to execute one or many orders
 type PriorityQueue []*Task
 
 func (pq PriorityQueue) Len() int { return len(pq) }

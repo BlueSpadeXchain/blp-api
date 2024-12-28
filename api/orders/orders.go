@@ -1,4 +1,4 @@
-package handler
+package orderHandler
 
 import (
 	"encoding/json"
@@ -7,37 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/supabase-community/postgrest-go"
-	"github.com/vercel/go-bridge/go/bridge"
 	"golang.org/x/crypto/sha3"
 )
-
-type OrderRequest struct {
-	Signer    string    `json:"signer"`
-	CreatedOn string    `json:"createdOn"`
-	ChainId   string    `json:"chainId"`
-	Order     OrderData `json:"order"`
-	MessageId string    `json:"messageId"`
-	Signature string    `json:"signature"`
-	Nonce     int64     `json:"nonce"`
-}
-
-// actually we don't need to store the hash or signature on the order, only for message validity
-
-type OrderData struct {
-	OrderId          string `json:"orderId"`
-	NetValue         string `json:"netValue"`
-	Amount           string `json:"amount"`
-	Collateral       string `json:"collateral"`
-	MarkPrice        string `json:"markPrice"`
-	EntryPrice       string `json:"EntryPrice"`
-	LiquidationPrice string `json:"liquidationPrice"`
-}
-
-type OrderResponse struct {
-	Success bool       `json:"success"`
-	Message string     `json:"message,omitempty"`
-	Data    *OrderData `json:"data,omitempty"` // this will assign a new orderId if not already applied
-}
 
 func validateSignature(order OrderRequest) bool {
 	hash := sha3.NewLegacyKeccak256()
@@ -50,7 +21,7 @@ func validateSignature(order OrderRequest) bool {
 	return crypto.PubkeyToAddress(*sigPublicKey).Hex() == order.Signer
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func Handler2(w http.ResponseWriter, r *http.Request) {
 	var orderReq OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -97,10 +68,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		Data:    &order,
 	}
 	json.NewEncoder(w).Encode(orderRes)
-}
-
-func main() {
-	bridge.Start(Handler)
 }
 
 // database needs the fields
