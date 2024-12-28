@@ -3,10 +3,12 @@ package userHandler
 import (
 	"net/http"
 
+	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/supabase-community/supabase-go"
 )
 
-func WithdrawRequest(r *http.Request, parameters ...*WithdrawRequestParams) (interface{}, error) {
+func WithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*WithdrawRequestParams) (interface{}, error) {
 	var params *WithdrawRequestParams
 
 	if len(parameters) > 0 {
@@ -24,7 +26,7 @@ func WithdrawRequest(r *http.Request, parameters ...*WithdrawRequestParams) (int
 	return nil, nil
 }
 
-func DespositRequest(r *http.Request, parameters ...*DespositRequestParams) (interface{}, error) {
+func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*DespositRequestParams) (interface{}, error) {
 	var params *DespositRequestParams
 
 	if len(parameters) > 0 {
@@ -42,7 +44,7 @@ func DespositRequest(r *http.Request, parameters ...*DespositRequestParams) (int
 	return nil, nil
 }
 
-func UserDataRequest(r *http.Request, parameters ...*UserDataRequestParams) (interface{}, error) {
+func UserDataRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UserDataRequestParams) (interface{}, error) {
 	var params *UserDataRequestParams
 
 	if len(parameters) > 0 {
@@ -60,13 +62,13 @@ func UserDataRequest(r *http.Request, parameters ...*UserDataRequestParams) (int
 	return nil, nil
 }
 
-func UserIdRequest(r *http.Request, parameters ...*UserIdRequestParams) (interface{}, error) {
-	var params *UserIdRequestParams
+func GetUserByIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetUserByIdRequestParams) (interface{}, error) {
+	var params *GetUserByIdRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &UserIdRequestParams{}
+		params = &GetUserByIdRequestParams{}
 	}
 
 	if r != nil {
@@ -75,10 +77,38 @@ func UserIdRequest(r *http.Request, parameters ...*UserIdRequestParams) (interfa
 		}
 	}
 
-	return nil, nil
+	user, err := db.GetUserByUserId(supabaseClient, params.UserId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+
+	return user, nil
 }
 
-func AddAuthorizedWalletRequest(r *http.Request, parameters ...*AddAuthorizedWalletRequestParams) (interface{}, error) {
+func GetUserByAddressRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetUserByAddressRequestParams) (interface{}, error) {
+	var params *GetUserByAddressRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &GetUserByAddressRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			return nil, err
+		}
+	}
+
+	user, err := db.GetOrCreateUser(supabaseClient, params.Address, params.AddressType)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+
+	return user, nil
+}
+
+func AddAuthorizedWalletRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*AddAuthorizedWalletRequestParams) (interface{}, error) {
 	var params *AddAuthorizedWalletRequestParams
 
 	if len(parameters) > 0 {
@@ -96,7 +126,7 @@ func AddAuthorizedWalletRequest(r *http.Request, parameters ...*AddAuthorizedWal
 	return nil, nil
 }
 
-func RemoveAuthorizedWalletRequest(r *http.Request, parameters ...*RemoveAuthorizedWalletRequestParams) (interface{}, error) {
+func RemoveAuthorizedWalletRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*RemoveAuthorizedWalletRequestParams) (interface{}, error) {
 	var params *RemoveAuthorizedWalletRequestParams
 
 	if len(parameters) > 0 {

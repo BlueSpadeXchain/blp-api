@@ -52,11 +52,11 @@ type RemoveAuthorizedWalletRequestParams struct {
 	Signature     SignatureRaw `query:"signature"`
 }
 
-// type UserLogRequestParams struct {
-// 	UserId string `query:"user-id"`
-// } // later
+type GetUserByIdRequestParams struct {
+	UserId string `query:"user-id"`
+}
 
-type UserIdRequestParams struct {
-	Address       string `query:"address"`
-	AddressFormat string `query:"format"`
+type GetUserByAddressRequestParams struct {
+	Address     string `query:"address"`
+	AddressType string `query:"type"` // referance to signature format (ecdsa/secp/edd/etc used by sig validation)
 }

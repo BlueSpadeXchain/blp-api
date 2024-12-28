@@ -3,7 +3,7 @@ package orderHandler
 import (
 	"net/http"
 
-	"github.com/BlueSpadeXchain/blp-api/api/pkg/utils"
+	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 )
 
 // each of these three request type add to requests pool to be processed
@@ -35,9 +35,9 @@ func OrderRequest(r *http.Request, parameters ...*OrderRequestParams) (interface
 		}
 	}
 
-	if err := validateOrderRequest(params); err != nil {
-		return nil, err
-	}
+	// if err := validateOrderRequest(params); err != nil {
+	// 	return nil, err
+	// }
 
 	// validate table for perp-id
 	// check if db has
@@ -60,9 +60,9 @@ func CloseOrder(r *http.Request, parameters ...*OrderCloseParams) (interface{}, 
 		}
 	}
 
-	if err := validateOrderClose(params); err != nil {
-		return nil, err
-	}
+	// if err := validateOrderClose(params); err != nil {
+	// 	return nil, err
+	// }
 
 	return nil, nil
 }

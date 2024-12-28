@@ -52,27 +52,30 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch query.Get("query") {
 		case "withdraw":
-			response, err = WithdrawRequest(r)
+			response, err = WithdrawRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "deposit":
-			response, err = DespositRequest(r)
+			response, err = DespositRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "user-data":
-			response, err = UserDataRequest(r)
+			response, err = UserDataRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "user-id":
-			response, err = UserIdRequest(r)
+		case "get-user-by-id":
+			response, err = GetUserByIdRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+		case "get-user-by-address":
+			response, err = GetUserByAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "add-wallet": // both need some type of connection token
-			response, err = AddAuthorizedWalletRequest(r)
+			response, err = AddAuthorizedWalletRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "remove-wallet":
-			response, err = RemoveAuthorizedWalletRequest(r)
+			response, err = RemoveAuthorizedWalletRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		default:

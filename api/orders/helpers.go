@@ -1,43 +1,36 @@
 package orderHandler
 
-import (
-	"fmt"
-	"math/big"
-
-	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
-)
-
 func validateOrderRequest(params OrderRequestParams) error {
-	_, relayAddress, err := utils.EnvKey2Ecdsa()
-	if err != nil {
-		return err
-	}
+	// _, relayAddress, err := utils.EnvKey2Ecdsa()
+	// if err != nil {
+	// 	return err
+	// }
 
-	chainId := new(big.Int)
-	markPrice := new(big.Int)
-	entryPrice := new(big.Int)
-	liqPrice := new(big.Int)
+	// chainId := new(big.Int)
+	// markPrice := new(big.Int)
+	// entryPrice := new(big.Int)
+	// liqPrice := new(big.Int)
 
-	if len(params.Signer) != 40 {
-		return fmt.Errorf("invalid signer length: must be 40 characters")
-	}
+	// if len(params.Signer) != 40 {
+	// 	return fmt.Errorf("invalid signer length: must be 40 characters")
+	// }
 
-	if len(params.Signature) != 130 {
-		return fmt.Errorf("invalid signature length: must be 130 characters")
-	}
+	// if len(params.Signature) != 130 {
+	// 	return fmt.Errorf("invalid signature length: must be 130 characters")
+	// }
 
-	if _, ok := chainId.SetString(params.PerpId, 10); !ok {
-		return fmt.Errorf("invalid perpId: %s", params.PerpId)
-	}
-	if _, ok := markPrice.SetString(params.MarkPrice, 10); !ok {
-		return fmt.Errorf("invalid markPrice: %s", params.MarkPrice)
-	}
-	if _, ok := entryPrice.SetString(params.EntryPrice, 10); !ok {
-		return fmt.Errorf("invalid entryPrice: %s", params.EntryPrice)
-	}
-	if _, ok := liqPrice.SetString(params.LiquidationPrice, 10); !ok {
-		return fmt.Errorf("invalid liquidationPrice: %s", params.LiquidationPrice)
-	}
+	// if _, ok := chainId.SetString(params.PerpId, 10); !ok {
+	// 	return fmt.Errorf("invalid perpId: %s", params.PerpId)
+	// }
+	// if _, ok := markPrice.SetString(params.MarkPrice, 10); !ok {
+	// 	return fmt.Errorf("invalid markPrice: %s", params.MarkPrice)
+	// }
+	// if _, ok := entryPrice.SetString(params.EntryPrice, 10); !ok {
+	// 	return fmt.Errorf("invalid entryPrice: %s", params.EntryPrice)
+	// }
+	// if _, ok := liqPrice.SetString(params.LiquidationPrice, 10); !ok {
+	// 	return fmt.Errorf("invalid liquidationPrice: %s", params.LiquidationPrice)
+	// }
 
 	// signer, err := utils.HexToBytes(params.Signer)
 	// if err != nil {

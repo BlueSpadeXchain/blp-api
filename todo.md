@@ -53,3 +53,7 @@ protocol orders take priority
   - [x] validate sigs (user or relay)
 - [ ] modify orders
 - [ ] close orders
+- [ ] add jwt/auth to supabase queries
+
+### Edge cases TODO
+- [ ] the use connects a wallet but needs to associate it with a different account

@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/supabase-community/supabase-go"
@@ -36,21 +37,6 @@ func ModifyWithdrawalStatus(client *supabase.Client, withdrawalID string, status
 	return nil
 }
 
-func CreateUser(client *supabase.Client, email, username string, walletAddresses []map[string]string) error {
-	userData := map[string]interface{}{
-		"email":            email,
-		"username":         username,
-		"wallet_addresses": walletAddresses,
-	}
-
-	_, _, err := client.From("users").Insert(userData, false, "", "minimal", "").Execute()
-	if err != nil {
-		log.Printf("Failed to create user: %v", err)
-		return err
-	}
-	return nil
-}
-
 func ModifyUserBalance(client *supabase.Client, userID string, newBalance int64) error {
 	updateData := map[string]interface{}{
 		"balance": newBalance,
@@ -59,36 +45,6 @@ func ModifyUserBalance(client *supabase.Client, userID string, newBalance int64)
 	_, _, err := client.From("users").Update(updateData, "", "").Eq("userid", userID).Execute()
 	if err != nil {
 		log.Printf("Failed to modify user balance: %v", err)
-		return err
-	}
-	return nil
-}
-
-func AddWalletToUser(client *supabase.Client, userID string, wallet map[string]string) error {
-	// Retrieve current wallet_addresses
-	response, _, err := client.From("users").Select("wallet_addresses", "", "").Eq("userid", userID).Execute()
-	if err != nil {
-		log.Printf("Failed to fetch user wallet_addresses: %v", err)
-		return err
-	}
-
-	var users []map[string]interface{}
-	err = json.Unmarshal(response, &users)
-	if err != nil || len(users) == 0 {
-		log.Printf("Failed to parse user wallet_addresses: %v", err)
-		return err
-	}
-
-	currentWallets := users[0]["wallet_addresses"].([]map[string]string)
-	currentWallets = append(currentWallets, wallet)
-
-	updateData := map[string]interface{}{
-		"wallet_addresses": currentWallets,
-	}
-
-	_, _, err = client.From("users").Update(updateData, "", "").Eq("userid", userID).Execute()
-	if err != nil {
-		log.Printf("Failed to add wallet to user: %v", err)
 		return err
 	}
 	return nil
@@ -123,4 +79,53 @@ func CloseOrder(client *supabase.Client, orderID string) error {
 		return err
 	}
 	return nil
+}
+
+// %!(EXTRA string={"code":"PGRST202","details":"Searched for the function public.get_user_by_userid with parameter userid or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.","hint":"Perhaps you meant to call the function public.get_user_by_userid(user_id)","message":"Could not find the function public.get_user_by_userid(userid) in the schema cache"})
+func GetUserByUserId(client *supabase.Client, userId string) (*User, error) {
+	params := map[string]interface{}{
+		"userid": userId,
+	}
+	response := client.Rpc("get_user_by_userid", "exact", params)
+
+	// First try to unmarshal as error response
+	var errResp SupabaseError
+	if err := json.Unmarshal([]byte(response), &errResp); err == nil {
+		if errResp.Code != "" { // If we successfully unmarshaled an error
+			return nil, fmt.Errorf("supabase error: %s - %s", errResp.Code, errResp.Message)
+		}
+	}
+
+	// If no error, try to unmarshal as user response
+	var users []User
+	if err := json.Unmarshal([]byte(response), &users); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	if len(users) == 0 {
+		return nil, fmt.Errorf("no user found for userId: %s", userId)
+	}
+
+	return &users[0], nil
+}
+
+func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) (*User, error) {
+	params := map[string]interface{}{
+		"wallet_addr": walletAddress,
+		"wallet_t":    walletType,
+	}
+
+	response := client.Rpc("get_or_create_user", "exact", params)
+
+	var users []User
+	err := json.Unmarshal([]byte(response), &users)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	if len(users) == 0 {
+		return nil, fmt.Errorf("db error: %v of type %v could not create a user", walletAddress, walletType)
+	}
+
+	return &users[0], nil
 }

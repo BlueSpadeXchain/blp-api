@@ -19,26 +19,10 @@ func example() {
 		log.Printf("Error logging example error: %v", err)
 	}
 
-	// Example: Create a user
-	walletAddresses := []map[string]string{
-		{"chainid": "1", "address": "0x1234...abcd"},
-	}
-	err = CreateUser(supabaseClient, "example@example.com", "exampleUser", walletAddresses)
-	if err != nil {
-		log.Printf("Error creating user: %v", err)
-	}
-
 	// Example: Modify user balance
 	err = ModifyUserBalance(supabaseClient, "example_user_id", 100000000) // Update balance to 100 nano-USD
 	if err != nil {
 		log.Printf("Error modifying user balance: %v", err)
-	}
-
-	// Example: Add wallet to user
-	newWallet := map[string]string{"chainid": "137", "address": "0x5678...efgh"}
-	err = AddWalletToUser(supabaseClient, "example_user_id", newWallet)
-	if err != nil {
-		log.Printf("Error adding wallet to user: %v", err)
 	}
 
 	// Example: Create a withdrawal

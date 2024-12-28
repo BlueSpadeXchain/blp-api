@@ -9,18 +9,17 @@ CREATE TABLE IF NOT EXISTS debug_logs (
     error JSONB,
     message TEXT,
     context JSONB,
-    status TEXT,
+    status TEXT
 );
 
 -- Create Users Table
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     userid VARCHAR(16) UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(8), 'hex'), -- 16-character hex value
-    email VARCHAR(255) UNIQUE,
-    username VARCHAR(255),
-    social_accounts JSONB DEFAULT '[]',
-    wallet_addresses JSONB DEFAULT '[]', -- Updated to store an array of [chainid, wallet public key]
+    wallet_address VARCHAR(255) UNIQUE NOT NULL,
+    wallet_type VARCHAR(50) NOT NULL,
     balance BIGINT DEFAULT 0,           -- Total balance in nano-USD (scaled by 1e9)
+    perp_balance BIGINT DEFAULT 0,      -- Perpetual balance in nano-USD
     escrow_balance BIGINT DEFAULT 0,    -- Escrow balance in nano-USD
     stake_balance BIGINT DEFAULT 0,     -- Staked balance in nano-USD
     frozen_balance BIGINT DEFAULT 0,    -- Frozen balance in nano-USD
@@ -30,7 +29,7 @@ CREATE TABLE users (
 -- Create Orders Table
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    userid INT REFERENCES users(userid) ON DELETE CASCADE,
+    userid VARCHAR(16) REFERENCES users(userid) ON DELETE CASCADE,
     order_type VARCHAR(50) NOT NULL CHECK (order_type IN ('long', 'short')),
     leverage NUMERIC(5, 2) NOT NULL CHECK (leverage <= 50),
     pair VARCHAR(50) NOT NULL,
@@ -45,7 +44,7 @@ CREATE TABLE orders (
 -- Create Withdrawals Table
 CREATE TABLE withdrawals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    userid INT REFERENCES users(userid) ON DELETE CASCADE,
+    userid VARCHAR(16) REFERENCES users(userid) ON DELETE CASCADE,
     amount NUMERIC(20, 2) NOT NULL CHECK (amount > 0),
     status VARCHAR(50) NOT NULL CHECK (status IN ('pending', 'completed', 'failed')),
     tx_hash VARCHAR(255),
