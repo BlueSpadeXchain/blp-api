@@ -52,6 +52,7 @@ package orderHandler
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -69,6 +70,26 @@ import (
 // then the price gets to 80 usd, how much money does his have, and how much money does he need to add to stablize his position
 // remember this is in the context of I can only add/remove via another order request, or close
 func Handler(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("\nRecovered from panic: %v", rec)
+
+			supabaseUrl := os.Getenv("SUPABASE_URL")
+			supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+			supabaseClient, err := supabase.NewClient(supabaseUrl, supabaseKey, nil)
+			if err == nil {
+				logErr := db.LogPanic(supabaseClient, fmt.Sprintf("%v", rec), nil)
+				if logErr != nil {
+					log.Printf("\nFailed to log panic to Supabase: %v", logErr)
+				}
+			} else {
+				log.Printf("\nFailed to create Supabase client for panic logging: %v", err)
+			}
+
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+	}()
+
 	handlerWithCORS := utils.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		var response interface{}

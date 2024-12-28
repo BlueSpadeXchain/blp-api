@@ -1,4 +1,4 @@
-package infoHandler
+package userHandler
 
 import (
 	"encoding/json"
@@ -11,6 +11,10 @@ import (
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/supabase-community/supabase-go"
 )
+
+// handler handles signed and unsigned user requests
+// login (maybe?), user data, escrow (withdrawls/deposits), staking
+// 	deposits will have to be signed by our blockchain listener (logged regardless, to catch missed payout history)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -47,8 +51,28 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		switch query.Get("query") {
-		case "version":
-			response, err = VersionRequest(r)
+		case "withdraw":
+			response, err = WithdrawRequest(r)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "deposit":
+			response, err = DespositRequest(r)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "user-data":
+			response, err = UserDataRequest(r)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "user-id":
+			response, err = UserIdRequest(r)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "add-wallet": // both need some type of connection token
+			response, err = AddAuthorizedWalletRequest(r)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "remove-wallet":
+			response, err = RemoveAuthorizedWalletRequest(r)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		default:

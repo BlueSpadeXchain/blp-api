@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
@@ -266,4 +267,25 @@ func Uint8ToString(data byte) string {
 func Uint256ToBytes(value *big.Int) []byte {
 	bytes := value.FillBytes(make([]byte, 32))
 	return bytes
+}
+
+// remember to -= 27 for ethereum signatures
+func ValidateEvmEcdsaSignature(hash []byte, signature []byte, address common.Address) (bool, error) {
+	if len(signature) != 65 {
+		return false, fmt.Errorf("invalid signature length: %d", len(signature))
+	}
+
+	ethHash := append(EthDomainHeader, hash...)
+	unsignedHash := crypto.Keccak256(ethHash)
+	fmt.Print(hex.EncodeToString(unsignedHash))
+
+	recoveredPubKey, err := crypto.SigToPub(unsignedHash, signature)
+	if err != nil {
+		return false, fmt.Errorf("failed to recover public key: %w", err)
+	}
+	recoveredAddress := crypto.PubkeyToAddress(*recoveredPubKey)
+
+	fmt.Printf("\nrecovered addrwess: %v", recoveredAddress.String())
+	fmt.Printf("\nexpected address:   %v", address.Hex())
+	return bytes.Equal(recoveredAddress.Bytes(), address.Bytes()), nil
 }
