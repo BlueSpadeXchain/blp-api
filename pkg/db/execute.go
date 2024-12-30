@@ -81,22 +81,18 @@ func CloseOrder(client *supabase.Client, orderID string) error {
 	return nil
 }
 
-// %!(EXTRA string={"code":"PGRST202","details":"Searched for the function public.get_user_by_userid with parameter userid or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.","hint":"Perhaps you meant to call the function public.get_user_by_userid(user_id)","message":"Could not find the function public.get_user_by_userid(userid) in the schema cache"})
 func GetUserByUserId(client *supabase.Client, userId string) (*User, error) {
 	params := map[string]interface{}{
-		"userid": userId,
+		"user_id": userId,
 	}
 	response := client.Rpc("get_user_by_userid", "exact", params)
 
-	// First try to unmarshal as error response
-	var errResp SupabaseError
-	if err := json.Unmarshal([]byte(response), &errResp); err == nil {
-		if errResp.Code != "" { // If we successfully unmarshaled an error
-			return nil, fmt.Errorf("supabase error: %s - %s", errResp.Code, errResp.Message)
-		}
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
 
-	// If no error, try to unmarshal as user response
 	var users []User
 	if err := json.Unmarshal([]byte(response), &users); err != nil {
 		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
@@ -116,6 +112,12 @@ func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) 
 	}
 
 	response := client.Rpc("get_or_create_user", "exact", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
 
 	var users []User
 	err := json.Unmarshal([]byte(response), &users)

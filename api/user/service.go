@@ -19,7 +19,8 @@ func WithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
@@ -37,7 +38,8 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
@@ -55,7 +57,8 @@ func UserDataRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
@@ -73,7 +76,8 @@ func GetUserByIdRequest(r *http.Request, supabaseClient *supabase.Client, parame
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
@@ -96,12 +100,14 @@ func GetUserByAddressRequest(r *http.Request, supabaseClient *supabase.Client, p
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
 	user, err := db.GetOrCreateUser(supabaseClient, params.Address, params.AddressType)
 	if err != nil {
+		utils.LogError("db GetOrCreateUser failed", err.Error())
 		return nil, utils.ErrInternal(err.Error())
 	}
 
@@ -119,7 +125,8 @@ func AddAuthorizedWalletRequest(r *http.Request, supabaseClient *supabase.Client
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
@@ -137,7 +144,8 @@ func RemoveAuthorizedWalletRequest(r *http.Request, supabaseClient *supabase.Cli
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 

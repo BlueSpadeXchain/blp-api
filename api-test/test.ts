@@ -105,10 +105,11 @@ const runTests = async () => {
     // 1. Create a user
     console.log('\nCreating a user...');
     const createdUser = await createUser(walletAddress, walletType);
+    const foundId = (createdUser as unknown as User).userid
 
     // 2. Find an existing user by ID
     console.log('\nFetching user by ID...');
-    const userById = await getUserById(userId);
+    const userById = await getUserById(foundId);
 
     // 3. Find an existing user by address
     console.log('\nFetching user by address...');

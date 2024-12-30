@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/BlueSpadeXchain/blp-api/bindings"
+	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -221,7 +222,7 @@ func updateBalance(client *supabase.Client, user map[string]interface{}, assetAd
 	return nil
 }
 
-func storeEventLog(client *supabase.Client, event *bindings.BindingsDeposit) {
+func storeEventLog(client *supabase.Client, event *bindings.BindingsDeposit) error {
 	eventData := map[string]interface{}{
 		"asset":  event.Asset.Hex(),
 		"from":   event.From.Hex(),
@@ -230,8 +231,8 @@ func storeEventLog(client *supabase.Client, event *bindings.BindingsDeposit) {
 
 	eventJSON, err := json.Marshal(eventData)
 	if err != nil {
-		log.Printf("Failed to marshal event data: %v\n", err)
-		return
+		utils.LogError("failed to marshal event data", err.Error())
+		return fmt.Errorf("failed to marshal event data: %v", err.Error())
 	}
 
 	logEntry := map[string]interface{}{
@@ -243,9 +244,11 @@ func storeEventLog(client *supabase.Client, event *bindings.BindingsDeposit) {
 
 	_, _, err = client.From("emit_logs").Insert(logEntry, false, "", "", "1").Execute()
 	if err != nil {
-		log.Printf("Failed to store event log: %v\n", err)
-		return
+		utils.LogError("failed to store event log", err.Error())
+		return fmt.Errorf("failed to store event log: %v", err.Error())
 	}
 
 	log.Printf("Stored event log for transaction: %s\n", event.Raw.TxHash.Hex())
+
+	return nil
 }

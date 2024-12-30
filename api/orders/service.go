@@ -31,7 +31,8 @@ func OrderRequest(r *http.Request, parameters ...*OrderRequestParams) (interface
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
@@ -56,7 +57,8 @@ func CloseOrder(r *http.Request, parameters ...*OrderCloseParams) (interface{}, 
 
 	if r != nil {
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, err
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
 		}
 	}
 
