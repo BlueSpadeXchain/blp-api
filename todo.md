@@ -44,6 +44,13 @@ protocol orders take priority
   - [x] create panic crash redudancy and checker
   - [x] create internal error wrapper
   - [x] create error sql table generation call
+- [ ] order
+  - [ ] order validation with price feed and balance
+  - [ ] order math
+    - [ ] test
+  - [ ] create order
+  - [ ] modify order
+  - [ ] group merge orders
 - [ ] create listener for contract changes
   - [ ] create evm contract to be listened to
   - [ ] create listener application
@@ -54,6 +61,13 @@ protocol orders take priority
 - [ ] modify orders
 - [ ] close orders
 - [x] add jwt/auth to supabase queries
+- [ ] rebalancer
+  - [x] connect to price feed for latest data
+  - [ ] rebalancer hosting
+    - [x] launch VM
+    - [x] activate
+    - [ ] deploy ci/cd for VM
+  - [ ] get db and initialize liquidations call to api
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
