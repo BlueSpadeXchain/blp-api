@@ -1,0 +1,111 @@
+package rebalancer
+
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/sirupsen/logrus"
+)
+
+func SubscribeToPriceStream(url string, ids []string) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logrus.Fatal("Error creating request:", err)
+		return
+	}
+
+	q := req.URL.Query()
+	for _, id := range ids {
+		q.Add("ids[]", id)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	// Open a connection to the SSE stream
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Fatal("Error connecting to stream:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// logrus.Info("Received line:", line)
+
+		response, err := processSSELine(line)
+		if err != nil {
+			logrus.Error(err.Error())
+		}
+
+		parsedResponse, ok := response.(Response)
+		if ok && err == nil {
+			for _, priceUpdate := range parsedResponse.Parsed {
+				fmt.Printf("ID: %s\n", priceUpdate.ID)
+				fmt.Printf("Price: %s\n", priceUpdate.Price.Price)
+				fmt.Printf("EMA Price: %s\n", priceUpdate.EmaPrice.Price)
+				fmt.Printf("Timestamp: %d\n", priceUpdate.Price.PublishTime)
+				fmt.Printf("Slot: %d\n", priceUpdate.Metadata.Slot)
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		logrus.Error("Error reading from SSE stream:", err)
+	}
+
+}
+
+func processSSELine(line string) (interface{}, error) {
+	if strings.HasPrefix(line, "data:") {
+		// Extract the JSON part of the line (strip "data:")
+		jsonData := strings.TrimPrefix(line, "data:")
+		jsonData = strings.TrimSpace(jsonData) // Remove any extra spaces or newlines
+
+		var payload Response
+		err := json.Unmarshal([]byte(jsonData), &payload)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling JSON payload: %v", err)
+		}
+
+		return payload, nil
+	} else {
+		logrus.Info(fmt.Sprintf("Ignoring unexpected line: %s\n", line))
+		return nil, nil
+	}
+}
+
+/*
+data:{
+	"binary":{
+		"encoding":"hex",
+		"data":[
+			"504e41550100000003b801000000040d00e351a260da76aec683d5b6179b6f8e817d8d7d0727e84ceaf6dac0deca05a4fc0ce55d0a5addaf6a871ed4aaacb785752db5d24b4a8bfa90158962a2517cc1f400024cb0a66e9f4adcbab8568d8f6032360dbf93def497ccbd02402a8abb7169e3ed1de3fa827f86ba7b3992679dcd7c6136719121254ce96d78309e1bcfe263d00400035876e6d45911aa1c73028be8d41a5412701732c3f7005a86440500310b3eaa0f635a3dfcd9d3757a31f78ad5b3e7c4c7f1561b04c7e1af3d360dee650030ade100049613ef5f6ddbe9271ffb7bd41ee781cbe8c55180bca45b794318a9d199e229f32bf8f44b8da144430d09826406861d13cbc8b9a53f50bd30a616c74d6849d7c101061cd7547a31bc897fc7e2443e9cbee426ca992048d064712f5596a954fa5689374741e6ec2842532fdd480604d34292336c6744150a144658bd9092bf9e87434b000852205ad844251a1349b6fbe1e7d9f27b8681d0628f47f7769142cc421b0b890433dc5ed49285b2717169edfa5b07544f8d53eec122079b5ceb22ccefbd4b63ef000a231ae39d67ed1f15b199ea34018660bfebb4e8f275037667f594868c74a64b362b548d8649136b230159342a6b2761bbca4c4996a6ce21d3504f1ff935bd670c010bb9e2a7ec75a714a5f77760968e50f32d9c8a70295f265e71aff8dc2c52a2d1d73753f36979cf2b2ec788961743b729976675305e7725a1a4862741bc7f9aea33000c5554b32e7c51e4f5383319af3345ab57a434bb6df4251d126ba6b8667fec55366e83b8acc085bbd5c75bcc1d99338f4bf1c75aaf08fe9d007593042cc183aedd000d717e0a95bc5f4db1a8f5a0795258f030b5190d059d6cff387b1b0783cb1012242c27f23aee7ccd09729a5feb72fb22d4b8bccd9d25bc5d6f4e49892026975031000f18fa460fd4967520c9976682c721d9dd0b532bf6d6e286af38998d41975f1eb4562be5a05911d14def552318667eb0d9a8e0e8b9307be23bf112aa700b446030011069b26caf4a5b2afad642c2c2e6efb9d5ee57dc37f39988f22fe7dc2f8001f6fb3fa03dfca0b7bf03dbbf9b02b2885a4785186d552de621b826ed4ef16a87741d00118e4b2346adcfa23e76e089b74753d49fc27e5c041be6c627959d5a51a5d9b8f706a943fa815ebac68606c9807bfa3fa4daec36a4d5a7aebb4fa02ce3229b8a73016773daea00000000001ae101faedac5851e32b9b23b5f9411a8c2bac4aae3ed4dd7b811dd1a72ea4aa7100000000062a89a7014155575600000000000b376d6500002710d86affe1de75b312f0a6f7383f0b0732330ea7c601005500e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b430000088e17d0360600000002305d11befffffff8000000006773daea000000006773daea0000088ac179e42000000001bc5439500b31be0d91a82eae8b2c080cf02a88e5f96a22a52fa70923bc214a8d0f3b0b4d5f4251d4fd655a2cc50ab6b8017b7ea1b2dea695791776ca14d5331491993a0e8576e8e4e5991983c3be76742f55e851f5d47879b0c8728abb48ff3042a66f2ab688922740cb33732f7b765f1c96c91a99a5a7ddb339c155f10ccd5fe1471fd63c6e8c59271b06cd7027380aee4d1a5605dc190821952944fc9168c58f7a5b04d2271cf84cf207de2550df8db4984bb7e473c269e452cf31930a62a0040e4edb21c6a6740d2619be0f0a92c4d15a3355ecc0050863529ff14422e9fbda"
+		]
+	},
+	"parsed":[{
+		"id":"e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
+		"price":{
+			"price":"9406377899526",
+			"conf":"9401340350",
+			"expo":-8,
+			"publish_time":1735645930
+		},
+		"ema_price":{
+			"price":"9392044500000",
+			"conf":"7454603600",
+			"expo":-8,
+			"publish_time":1735645930
+		},
+		"metadata":{
+			"slot":188181861,
+			"proof_available_time":1735645932,
+			"prev_publish_time":1735645930
+		}
+	}]
+}
+*/

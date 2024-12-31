@@ -1,12 +1,13 @@
-package rebalancer
+package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"time"
 
+	"github.com/BlueSpadeXchain/blp-api/rebalancer/rebalancer"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	// "github.com/BlueSpadeXchain/blp-api/pkg/utils"
@@ -69,34 +70,45 @@ func fetchData(url string) {
 }
 
 func main() {
-	// Load environment variables
-	err := godotenv.Load(".env.local")
-	if err != nil {
-		fmt.Println("Error loading .env.local file")
+	serverEnv := flag.String("server", "production", "Specify the server environment (local/production)")
+	flag.Parse()
+
+	var envFile string
+	if *serverEnv == "local" {
+		envFile = ".env.local"
+	} else {
+		envFile = ".env"
 	}
 
-	// Configure logging
+	err := godotenv.Load(envFile)
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+
 	debugMode := os.Getenv("DEBUG_MODE_ENABLED")
 	if debugMode == "true" || debugMode == "1" {
 		logrus.SetLevel(logrus.DebugLevel)
 	} else {
-		logrus.SetLevel(logrus.InfoLevel)
+		logrus.SetLevel(logrus.FatalLevel)
 	}
+
 	logrus.SetFormatter(&CustomLogFormatter{})
 
 	logrus.Info("Rebalancer bot starting...")
 
-	url := "https://example.com"
+	// url := "https://example.com"
 
-	// Periodically fetch data
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
+	// // Periodically fetch data
+	// ticker := time.NewTicker(5 * time.Second)
+	// defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			logrus.Debug("Fetching data from ", url)
-			fetchData(url)
-		}
-	}
+	// for range ticker.C {
+	// 	logrus.Debug("Fetching data from ", url)
+	// 	fetchData(url)
+	// }
+
+	url := "https://hermes.pyth.network/v2/updates/price/stream"
+
+	rebalancer.SubscribeToPriceStream(url, rebalancer.PriceFeedIds)
+
 }
