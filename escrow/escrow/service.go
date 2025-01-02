@@ -1,19 +1,18 @@
 package escrow
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
-	"net/http"
-	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sirupsen/logrus"
 )
 
 type EventData struct {
@@ -22,93 +21,145 @@ type EventData struct {
 	TxHash string `json:"tx_hash"`
 }
 
-func StartListener(rpcURL string) {
+func StartListener(rpcURL string, chainId string) {
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to Ethereum client: %v", err)
 	}
 	defer client.Close()
 
-	// Load ABI
-	abiFile, err := os.ReadFile("./escrow/abi/contract.json")
+	escrowAddress, err := getAddress(chainId)
 	if err != nil {
-		log.Fatalf("Failed to load ABI file: %v", err)
+		logrus.Fatal("Failed to parse contract address: ", err.Error())
 	}
 
-	contractABI, err := abi.JSON(string(abiFile))
-	if err != nil {
-		log.Fatalf("Failed to parse contract ABI: %v", err)
-	}
-
-	// Define contract address and topics
-	contractAddress := common.HexToAddress(os.Getenv("CONTRACT_ADDRESS"))
 	query := ethereum.FilterQuery{
-		Addresses: []common.Address{contractAddress},
+		Addresses: []common.Address{escrowAddress},
 	}
 
-	// Subscribe to events
-	logs := make(chan ethereum.LogFilterer)
+	escrowABI, _ := abi.JSON(strings.NewReader(escrowContractABI))
+	if err != nil {
+		logrus.Fatal("Failed to parse contract ABI: ", err.Error())
+	}
+
+	logs := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		log.Fatalf("Failed to subscribe to events: %v", err)
+		log.Fatal("Failed to subscribe to logs:", err)
 	}
-	defer sub.Unsubscribe()
 
-	fmt.Println("Listening for events...")
+	DepositEventSig := escrowABI.Events["DepositEvent"].ID
+	StakingDepositEventSig := escrowABI.Events["StakingDepositEvent"].ID
+	BurnRequestEventSig := escrowABI.Events["BurnRequestEvent"].ID
+	// fmt.Printf("\n DepositEventSig: %v", DepositEventSig)
+	// fmt.Printf("\n StakingDepositEventSig: %v", StakingDepositEventSig)
+	// fmt.Printf("\n BurnRequestEventSig: %v", BurnRequestEventSig)
 
 	for {
 		select {
 		case err := <-sub.Err():
-			log.Fatalf("Subscription error: %v", err)
+			log.Fatal(err)
 		case vLog := <-logs:
-			fmt.Println("Event received!")
-			handleEvent(contractABI, vLog)
+			fmt.Println("BlockHash:", vLog.BlockHash.Hex())
+			fmt.Println("BlockNumber:", vLog.BlockNumber)
+			fmt.Println("TxHash:", vLog.TxHash.Hex())
+
+			// Handle events based on signature hash
+			switch vLog.Topics[0] {
+			case DepositEventSig:
+				var event struct {
+					Sender       common.Address
+					Account      common.Address
+					Nonce        *big.Int
+					AssetAddress common.Address
+					AssetAmount  *big.Int
+				}
+				err := escrowABI.UnpackIntoInterface(&event, "DepositEvent", vLog.Data)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println("DepositEvent:", event)
+
+			case StakingDepositEventSig:
+				var event struct {
+					Sender       common.Address
+					Account      common.Address
+					Nonce        *big.Int
+					AssetAddress common.Address
+					AssetAmount  *big.Int
+				}
+				err := escrowABI.UnpackIntoInterface(&event, "StakingDepositEvent", vLog.Data)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println("StakingDepositEvent:", event)
+
+			case BurnRequestEventSig:
+				var event struct {
+					Nonce        *big.Int
+					AssetAddress common.Address
+					AssetAmount  *big.Int
+				}
+				err := escrowABI.UnpackIntoInterface(&event, "BurnRequestEvent", vLog.Data)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println("BurnRequestEvent:", event)
+
+			default:
+				fmt.Println("Unknown event signature:", vLog.Topics[0].Hex())
+			}
 		}
 	}
 }
 
-func handleEvent(contractABI abi.ABI, vLog ethereum.Log) {
-	// Parse the event log
-	event := struct {
-		From  common.Address
-		Value *big.Int
-	}{}
+// now need to make request to backend to add deposits
+// BlockNumber: 14
+// TxHash: 0xe9f1fe395e55ca3037a5d248b87de7f5c124a2f558a9f8493ce6fa6fe9c8e9fd
+// DepositEvent: {0x70997970C51812dc3A010C7d01b50e0d17dc79C8 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 4 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 100000000000000000000}
 
-	err := contractABI.UnpackIntoInterface(&event, "DepositEvent", vLog.Data)
-	if err != nil {
-		log.Printf("Failed to unpack event data: %v", err)
-		return
-	}
+// func handleEvent(contractABI abi.ABI, vLog ethereum.Log) {
+// 	// Parse the event log
+// 	event := struct {
+// 		From  common.Address
+// 		Value *big.Int
+// 	}{}
 
-	// Format and send the event to the backend API
-	data := EventData{
-		From:   event.From.Hex(),
-		Value:  event.Value.String(),
-		TxHash: vLog.TxHash.Hex(),
-	}
+// 	err := contractABI.UnpackIntoInterface(&event, "DepositEvent", vLog.Data)
+// 	if err != nil {
+// 		log.Printf("Failed to unpack event data: %v", err)
+// 		return
+// 	}
 
-	sendToBackendAPI(data)
-}
+// 	// Format and send the event to the backend API
+// 	data := EventData{
+// 		From:   event.From.Hex(),
+// 		Value:  event.Value.String(),
+// 		TxHash: vLog.TxHash.Hex(),
+// 	}
 
-func sendToBackendAPI(event EventData) {
-	backendURL := os.Getenv("BACKEND_API_URL")
-	if backendURL == "" {
-		log.Println("BACKEND_API_URL is not set")
-		return
-	}
+// 	sendToBackendAPI(data)
+// }
 
-	payload, err := json.Marshal(event)
-	if err != nil {
-		log.Printf("Failed to marshal event data: %v", err)
-		return
-	}
+// func sendToBackendAPI(event EventData) {
+// 	backendURL := os.Getenv("BACKEND_API_URL")
+// 	if backendURL == "" {
+// 		log.Println("BACKEND_API_URL is not set")
+// 		return
+// 	}
 
-	resp, err := http.Post(backendURL, "application/json", bytes.NewReader(payload))
-	if err != nil {
-		log.Printf("Failed to send event to backend: %v", err)
-		return
-	}
-	defer resp.Body.Close()
+// 	payload, err := json.Marshal(event)
+// 	if err != nil {
+// 		log.Printf("Failed to marshal event data: %v", err)
+// 		return
+// 	}
 
-	fmt.Printf("Event sent to backend successfully. Status code: %d\n", resp.StatusCode)
-}
+// 	resp, err := http.Post(backendURL, "application/json", bytes.NewReader(payload))
+// 	if err != nil {
+// 		log.Printf("Failed to send event to backend: %v", err)
+// 		return
+// 	}
+// 	defer resp.Body.Close()
+
+// 	fmt.Printf("Event sent to backend successfully. Status code: %d\n", resp.StatusCode)
+// }
