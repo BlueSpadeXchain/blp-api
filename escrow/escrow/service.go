@@ -2,15 +2,20 @@ package escrow
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sirupsen/logrus"
 )
@@ -22,6 +27,20 @@ type EventData struct {
 }
 
 func StartListener(rpcURL string, chainId string) {
+	if chainId == "" {
+		chainId = "31337"
+	}
+	pkhex := os.Getenv("EVM_PRIVATE_KEY")
+	if pkhex == "" {
+		logrus.Fatal("EVM_PRIVATE_KEY is not set")
+	}
+	pk, _ := crypto.HexToECDSA(pkhex)
+
+	userApi := os.Getenv("USER_API")
+	if pkhex == "" {
+		logrus.Fatal("USER_API is not set")
+	}
+
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to Ethereum client: %v", err)
@@ -76,9 +95,30 @@ func StartListener(rpcURL string, chainId string) {
 				}
 				err := escrowABI.UnpackIntoInterface(&event, "DepositEvent", vLog.Data)
 				if err != nil {
-					log.Fatal(err)
+					logrus.Fatal(err)
 				}
-				fmt.Println("DepositEvent:", event)
+				logrus.Info("DepositEvent:", event)
+
+				signature, err := hashToSignECDSA(crypto.Keccak256(vLog.TxHash.Bytes()), pk)
+				if err != nil {
+					logrus.Error(err.Error())
+				}
+
+				request := &DespositRequestParams{
+					ChainId:      chainId,
+					Block:        strconv.FormatUint(vLog.BlockNumber, 10),
+					BlockHash:    vLog.BlockHash.Hex(),
+					TxHash:       vLog.TxHash.Hex(),
+					Sender:       event.Account.Hex(),
+					Receiver:     event.Account.Hex(),
+					DepositNonce: event.Nonce.String(),
+					Asset:        event.AssetAddress.Hex(),
+					Amount:       event.AssetAmount.String(),
+					Signature:    signature,
+				}
+				body, _ := ConvertStructToQuery(request)
+				logrus.Info("body: ", body)
+				sendRequest(userApi, "deposit", body)
 
 			case StakingDepositEventSig:
 				var event struct {
@@ -92,7 +132,26 @@ func StartListener(rpcURL string, chainId string) {
 				if err != nil {
 					log.Fatal(err)
 				}
-				fmt.Println("StakingDepositEvent:", event)
+				logrus.Info("StakingDepositEvent:", event)
+				signature, err := SignData(crypto.Keccak256(vLog.TxHash.Bytes()), pk)
+				if err != nil {
+					logrus.Error(err.Error())
+				}
+
+				request := &StakeRequestParams{
+					ChainId:      chainId,
+					Block:        strconv.FormatUint(vLog.BlockNumber, 10),
+					BlockHash:    vLog.BlockHash.Hex(),
+					TxHash:       vLog.TxHash.Hex(),
+					Sender:       event.Account.Hex(),
+					Receiver:     event.Account.Hex(),
+					DepositNonce: event.Nonce.String(),
+					Asset:        event.AssetAddress.Hex(),
+					Amount:       event.AssetAmount.String(),
+					Signature:    signature,
+				}
+				body, _ := ConvertStructToQuery(request)
+				sendRequest(userApi, "stake", body)
 
 			case BurnRequestEventSig:
 				var event struct {
@@ -104,62 +163,19 @@ func StartListener(rpcURL string, chainId string) {
 				if err != nil {
 					log.Fatal(err)
 				}
-				fmt.Println("BurnRequestEvent:", event)
+				logrus.Info("BurnRequestEvent:", event)
 
 			default:
-				fmt.Println("Unknown event signature:", vLog.Topics[0].Hex())
+				logrus.Error("Unknown event signature:", vLog.Topics[0].Hex())
 			}
 		}
 	}
 }
 
-// now need to make request to backend to add deposits
-// BlockNumber: 14
-// TxHash: 0xe9f1fe395e55ca3037a5d248b87de7f5c124a2f558a9f8493ce6fa6fe9c8e9fd
-// DepositEvent: {0x70997970C51812dc3A010C7d01b50e0d17dc79C8 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 4 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 100000000000000000000}
+func hashToSignECDSA(hash []byte, pk *ecdsa.PrivateKey) (string, error) {
+	header, _ := hex.DecodeString("19457468657265756d205369676e6564204d6573736167653a0a3332")
+	ethHash := append(header, hash...)
+	unsignedHash := crypto.Keccak256(ethHash)
 
-// func handleEvent(contractABI abi.ABI, vLog ethereum.Log) {
-// 	// Parse the event log
-// 	event := struct {
-// 		From  common.Address
-// 		Value *big.Int
-// 	}{}
-
-// 	err := contractABI.UnpackIntoInterface(&event, "DepositEvent", vLog.Data)
-// 	if err != nil {
-// 		log.Printf("Failed to unpack event data: %v", err)
-// 		return
-// 	}
-
-// 	// Format and send the event to the backend API
-// 	data := EventData{
-// 		From:   event.From.Hex(),
-// 		Value:  event.Value.String(),
-// 		TxHash: vLog.TxHash.Hex(),
-// 	}
-
-// 	sendToBackendAPI(data)
-// }
-
-// func sendToBackendAPI(event EventData) {
-// 	backendURL := os.Getenv("BACKEND_API_URL")
-// 	if backendURL == "" {
-// 		log.Println("BACKEND_API_URL is not set")
-// 		return
-// 	}
-
-// 	payload, err := json.Marshal(event)
-// 	if err != nil {
-// 		log.Printf("Failed to marshal event data: %v", err)
-// 		return
-// 	}
-
-// 	resp, err := http.Post(backendURL, "application/json", bytes.NewReader(payload))
-// 	if err != nil {
-// 		log.Printf("Failed to send event to backend: %v", err)
-// 		return
-// 	}
-// 	defer resp.Body.Close()
-
-// 	fmt.Printf("Event sent to backend successfully. Status code: %d\n", resp.StatusCode)
-// }
+	return SignData(unsignedHash, pk)
+}

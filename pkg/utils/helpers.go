@@ -277,7 +277,6 @@ func ValidateEvmEcdsaSignature(hash []byte, signature []byte, address common.Add
 
 	ethHash := append(EthDomainHeader, hash...)
 	unsignedHash := crypto.Keccak256(ethHash)
-	fmt.Print(hex.EncodeToString(unsignedHash))
 
 	recoveredPubKey, err := crypto.SigToPub(unsignedHash, signature)
 	if err != nil {
@@ -285,7 +284,10 @@ func ValidateEvmEcdsaSignature(hash []byte, signature []byte, address common.Add
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*recoveredPubKey)
 
-	fmt.Printf("\nrecovered addrwess: %v", recoveredAddress.String())
-	fmt.Printf("\nexpected address:   %v", address.Hex())
+	LogInfo("Recover details", FormatKeyValueLogs([][2]string{
+		{"recovered address", recoveredAddress.String()},
+		{"expected address ", address.Hex()},
+	}))
+
 	return bytes.Equal(recoveredAddress.Bytes(), address.Bytes()), nil
 }

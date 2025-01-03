@@ -1,10 +1,17 @@
 package userHandler
 
 import (
+	"encoding/hex"
+	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -40,6 +47,23 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 		if err := utils.ParseAndValidateParams(r, &params); err != nil {
 			utils.LogError("failed to parse params", err.Error())
 			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	txHash, _ := hex.DecodeString(RemoveHex0xPrefix(params.TxHash))
+	fmt.Printf("\n txhash: %v", txHash)
+	signature, _ := hex.DecodeString(params.Signature)
+	pubkey := os.Getenv("EVM_ADDRESS")
+	if pubkey == "" {
+		logrus.Fatal("EVM_ADDRESS is not set")
+	}
+	if ok, err := utils.ValidateEvmEcdsaSignature(crypto.Keccak256(txHash), signature, common.HexToAddress(pubkey)); !ok || err != nil {
+		if err != nil {
+			utils.LogError("error validating isgnature", err.Error())
+			return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+		} else {
+			utils.LogError("signature validation failed", "invaid signature")
+			return nil, utils.ErrInternal("Signature validation failed: invalid signature")
 		}
 	}
 
@@ -150,4 +174,11 @@ func RemoveAuthorizedWalletRequest(r *http.Request, supabaseClient *supabase.Cli
 	}
 
 	return nil, nil
+}
+
+func RemoveHex0xPrefix(hex string) string {
+	if strings.HasPrefix(hex, "0x") || strings.HasPrefix(hex, "0X") {
+		return hex[2:]
+	}
+	return hex
 }
