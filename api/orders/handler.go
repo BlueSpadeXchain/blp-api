@@ -112,12 +112,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		// 	response, err = CloseOrderRequest(r)
 		// 	HandleResponse(w, r, supabaseClient, response, err)
 		// 	return
-		case "request-order": // similar to data from unsigned-data, but no op data
-			response, err = OrderRequest(r)
+		case "create-order-unsigned":
+			response, err = OrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "get-orders": // similar to data from unsigned-data, but no op data
-			response, err = GetOrdersRequest(r)
+		case "create-order-signed":
+			response, err = OrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "get-orders":
+			response, err = GetOrdersRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		default:

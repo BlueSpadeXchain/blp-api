@@ -291,3 +291,10 @@ func ValidateEvmEcdsaSignature(hash []byte, signature []byte, address common.Add
 
 	return bytes.Equal(recoveredAddress.Bytes(), address.Bytes()), nil
 }
+
+func RemoveHex0xPrefix(hex string) string {
+	if strings.HasPrefix(hex, "0x") || strings.HasPrefix(hex, "0X") {
+		return hex[2:]
+	}
+	return hex
+}

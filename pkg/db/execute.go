@@ -50,12 +50,33 @@ func ModifyUserBalance(client *supabase.Client, userID string, newBalance int64)
 	return nil
 }
 
-func CreateOrder(client *supabase.Client, orderData map[string]interface{}) error {
-	_, _, err := client.From("orders").Insert(orderData, false, "", "minimal", "").Execute()
-	if err != nil {
-		log.Printf("Failed to create order: %v", err)
-		return err
+func CreateOrder(client *supabase.Client, userId, orderType, leverage, pair, amount, entryPrice, markPrice string) error {
+	// Convert chainID, block, and depositNonce to string for TEXT type in the database
+	params := map[string]interface{}{
+		"user_id":     userId,
+		"order_type":  orderType,
+		"leverage":    leverage,
+		"pair":        pair,
+		"amount":      amount,
+		"entry_price": entryPrice,
+		"mark_price":  markPrice,
 	}
+
+	// Execute the RPC call
+	response := client.Rpc("create_order", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return fmt.Errorf("db error: failed to execute create_order for user ID %v", userId)
+	}
+
 	return nil
 }
 
@@ -81,31 +102,7 @@ func CloseOrder(client *supabase.Client, orderID string) error {
 	return nil
 }
 
-func GetUserByUserId(client *supabase.Client, userId string) (*User, error) {
-	params := map[string]interface{}{
-		"user_id": userId,
-	}
-	response := client.Rpc("get_user_by_userid", "exact", params)
-
-	var supabaseError SupabaseError
-	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
-		LogSupabaseError(supabaseError)
-		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
-	}
-
-	var users []User
-	if err := json.Unmarshal([]byte(response), &users); err != nil {
-		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
-	}
-
-	if len(users) == 0 {
-		return nil, fmt.Errorf("no user found for userId: %s", userId)
-	}
-
-	return &users[0], nil
-}
-
-func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) (*User, error) {
+func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) (*UserResponse, error) {
 	params := map[string]interface{}{
 		"wallet_addr": walletAddress,
 		"wallet_t":    walletType,
@@ -119,7 +116,7 @@ func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) 
 		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
 
-	var users []User
+	var users []UserResponse
 	err := json.Unmarshal([]byte(response), &users)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)

@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
@@ -52,7 +51,7 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 	}
 
 	// validate signature to verify backend query
-	txHash, _ := hex.DecodeString(RemoveHex0xPrefix(params.TxHash))
+	txHash, _ := hex.DecodeString(utils.RemoveHex0xPrefix(params.TxHash))
 	fmt.Printf("\n txhash: %v", txHash)
 	signature, _ := hex.DecodeString(params.Signature)
 	pubkey := os.Getenv("EVM_ADDRESS")
@@ -76,7 +75,7 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 		return nil, utils.ErrInternal("Invalid amount format")
 	}
 
-	if RemoveHex0xPrefix(params.Asset) == "0000000000000000000000000000000000000000" {
+	if utils.RemoveHex0xPrefix(params.Asset) == "0000000000000000000000000000000000000000" {
 		// If address(0), assume 18 decimals
 		// 1 * 10^18 tokens = 3000 USD
 		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil) // 10^18
@@ -93,15 +92,15 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 
 	if err := db.AddUserDeposit(
 		supabaseClient,
-		RemoveHex0xPrefix(params.Receiver),
+		utils.RemoveHex0xPrefix(params.Receiver),
 		"ecdsa",
 		params.ChainId,
 		params.Block,
-		RemoveHex0xPrefix(params.BlockHash),
-		RemoveHex0xPrefix(params.TxHash),
-		RemoveHex0xPrefix(params.Sender),
+		utils.RemoveHex0xPrefix(params.BlockHash),
+		utils.RemoveHex0xPrefix(params.TxHash),
+		utils.RemoveHex0xPrefix(params.Sender),
 		params.DepositNonce,
-		RemoveHex0xPrefix(params.Asset),
+		utils.RemoveHex0xPrefix(params.Asset),
 		params.Amount,
 		value); err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("Failed to add deposit: %v", err.Error()))
@@ -214,11 +213,4 @@ func RemoveAuthorizedWalletRequest(r *http.Request, supabaseClient *supabase.Cli
 	}
 
 	return nil, nil
-}
-
-func RemoveHex0xPrefix(hex string) string {
-	if strings.HasPrefix(hex, "0x") || strings.HasPrefix(hex, "0X") {
-		return hex[2:]
-	}
-	return hex
 }

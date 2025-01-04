@@ -53,9 +53,8 @@ protocol orders take priority
   - [ ] group merge orders
 - [x] create listener for contract changes
   - [x] create evm contract to be listened to
-  - [ ] create listener application
-    - [ ] upon message received call the api to notice log/db log
-- [ ]
+  - [x] create listener application
+    - [x] upon message received call the api to notice log/db log
 - [ ] create of position orders, assume large liquidity 100m BUSD, max order size 1k
   - [x] validate sigs (user or relay)
   - [ ] test liquidation order

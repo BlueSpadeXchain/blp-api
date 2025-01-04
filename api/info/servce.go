@@ -11,3 +11,9 @@ func VersionRequest(r *http.Request, parameters ...interface{}) (interface{}, er
 		Version: Version,
 	}, nil
 }
+
+func GetPairsRequest(r *http.Request, parameters ...interface{}) (interface{}, error) {
+	return GetPairsResponse{
+		Pairs: Pairs,
+	}, nil
+}
