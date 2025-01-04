@@ -3,6 +3,7 @@ package userHandler
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
 	"strings"
@@ -50,6 +51,7 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 		}
 	}
 
+	// validate signature to verify backend query
 	txHash, _ := hex.DecodeString(RemoveHex0xPrefix(params.TxHash))
 	fmt.Printf("\n txhash: %v", txHash)
 	signature, _ := hex.DecodeString(params.Signature)
@@ -65,6 +67,44 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 			utils.LogError("signature validation failed", "invaid signature")
 			return nil, utils.ErrInternal("Signature validation failed: invalid signature")
 		}
+	}
+
+	// parse value or deposit (1 eth = 3000 usd, 1 token = 1 usd)
+	var value string
+	amount, ok := new(big.Int).SetString(params.Amount, 10) // Convert amount to big.Int
+	if !ok {
+		return nil, utils.ErrInternal("Invalid amount format")
+	}
+
+	if RemoveHex0xPrefix(params.Asset) == "0000000000000000000000000000000000000000" {
+		// If address(0), assume 18 decimals
+		// 1 * 10^18 tokens = 3000 USD
+		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil) // 10^18
+		usdValue := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(tokensPerUSD))
+		usdValue.Mul(usdValue, big.NewFloat(3000)) // Multiply by 3000 USD
+		value = fmt.Sprintf("%.9f", usdValue)
+	} else {
+		// For non-address(0), assume 9 decimals
+		// 1 * 10^9 tokens = 1 USD
+		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(9), nil) // 10^9
+		usdValue := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(tokensPerUSD))
+		value = fmt.Sprintf("%.9f", usdValue)
+	}
+
+	if err := db.AddUserDeposit(
+		supabaseClient,
+		RemoveHex0xPrefix(params.Receiver),
+		"ecdsa",
+		params.ChainId,
+		params.Block,
+		RemoveHex0xPrefix(params.BlockHash),
+		RemoveHex0xPrefix(params.TxHash),
+		RemoveHex0xPrefix(params.Sender),
+		params.DepositNonce,
+		RemoveHex0xPrefix(params.Asset),
+		params.Amount,
+		value); err != nil {
+		return nil, utils.ErrInternal(fmt.Sprintf("Failed to add deposit: %v", err.Error()))
 	}
 
 	return nil, nil

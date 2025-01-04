@@ -51,15 +51,14 @@ protocol orders take priority
   - [ ] create order
   - [ ] modify order
   - [ ] group merge orders
-- [ ] create listener for contract changes
-  - [ ] create evm contract to be listened to
+- [x] create listener for contract changes
+  - [x] create evm contract to be listened to
   - [ ] create listener application
     - [ ] upon message received call the api to notice log/db log
 - [ ]
 - [ ] create of position orders, assume large liquidity 100m BUSD, max order size 1k
   - [x] validate sigs (user or relay)
-- [ ] modify orders
-- [ ] close orders
+  - [ ] test liquidation order
 - [x] add jwt/auth to supabase queries
 - [ ] rebalancer
   - [x] connect to price feed for latest data
@@ -71,3 +70,4 @@ protocol orders take priority
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
+- [ ] add confirmation validation in the case of reordering

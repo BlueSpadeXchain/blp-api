@@ -131,3 +131,37 @@ func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) 
 
 	return &users[0], nil
 }
+
+func AddUserDeposit(client *supabase.Client, walletAddress, walletType, chainID, block, blockHash, txHash, sender, depositNonce, asset, amount, value string) error {
+	// Convert chainID, block, and depositNonce to string for TEXT type in the database
+	params := map[string]interface{}{
+		"wallet_addr":   walletAddress,
+		"wallet_t":      walletType,
+		"chain":         chainID,
+		"blk":           block,
+		"blk_hash":      blockHash,
+		"tx_hash":       txHash,
+		"sndr":          sender,
+		"deposit_nonce": depositNonce,
+		"asset_addr":    asset,
+		"amt":           amount,
+		"val":           value,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("add_user_deposit", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return fmt.Errorf("db error: failed to execute add_user_deposit for wallet %v", walletAddress)
+	}
+
+	return nil
+}
