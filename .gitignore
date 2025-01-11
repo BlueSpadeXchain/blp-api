@@ -11,8 +11,6 @@ bin/
 
 # Dependency directories (remove these if you manage dependencies outside of your repository)
 /vendor/
-/go.mod
-/go.sum
 
 # Logs and temporary files
 *.log
