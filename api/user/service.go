@@ -109,6 +109,52 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 	return nil, nil
 }
 
+func GetDepositsByUserAddressRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetDepositsByUserAddressRequestParams) (interface{}, error) {
+	var params *GetDepositsByUserAddressRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &GetDepositsByUserAddressRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	deposits, err := db.GetOrdersByUserAddress(supabaseClient, params.WalletAddress, params.WalletType)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	return deposits, nil
+}
+
+func GetDepositsByUserIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetDepositsByUserIdRequestParams) (interface{}, error) {
+	var params *GetDepositsByUserIdRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &GetDepositsByUserIdRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	deposits, err := db.GetDepositsByUserId(supabaseClient, params.UserId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	return deposits, nil
+}
+
 func UserDataRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UserDataRequestParams) (interface{}, error) {
 	var params *UserDataRequestParams
 
@@ -128,13 +174,13 @@ func UserDataRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 	return nil, nil
 }
 
-func GetUserByIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetUserByIdRequestParams) (interface{}, error) {
-	var params *GetUserByIdRequestParams
+func GetUserByUserIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetUserByUserIdRequestParams) (interface{}, error) {
+	var params *GetUserByUserIdRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &GetUserByIdRequestParams{}
+		params = &GetUserByUserIdRequestParams{}
 	}
 
 	if r != nil {
@@ -152,13 +198,13 @@ func GetUserByIdRequest(r *http.Request, supabaseClient *supabase.Client, parame
 	return user, nil
 }
 
-func GetUserByAddressRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetUserByAddressRequestParams) (interface{}, error) {
-	var params *GetUserByAddressRequestParams
+func GetUserByUserAddressRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetUserByUserAddressRequestParams) (interface{}, error) {
+	var params *GetUserByUserAddressRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &GetUserByAddressRequestParams{}
+		params = &GetUserByUserAddressRequestParams{}
 	}
 
 	if r != nil {

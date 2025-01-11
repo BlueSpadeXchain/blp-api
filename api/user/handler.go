@@ -63,13 +63,29 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = UserDataRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "get-user-by-id":
-			response, err = GetUserByIdRequest(r, supabaseClient)
+		case "get-user-by-user-id":
+			response, err = GetUserByUserIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
-		case "get-user-by-address":
-			response, err = GetUserByAddressRequest(r, supabaseClient)
+		case "get-user-by-user-address":
+			response, err = GetUserByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "get-deposits-by-user-id":
+			response, err = GetDepositsByUserIdRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "get-deposits-by-user-address":
+			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// case "get-orders-by-user-id":
+		// 	response, err = GetOrdersByUserIdRequest(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
+		// case "get-orders-by-user-address":
+		// 	response, err = GetOrdersByUserAddressRequest(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// return
 		case "add-wallet": // both need some type of connection token
 			response, err = AddAuthorizedWalletRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)

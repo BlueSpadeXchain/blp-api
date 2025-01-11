@@ -8,6 +8,8 @@ import (
 )
 
 func GetUserByUserId(client *supabase.Client, userId string) (*UserResponse, error) {
+	fmt.Printf("\n inside of getuser")
+	fmt.Printf("\n inside of getuser: %v", userId)
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
@@ -18,11 +20,13 @@ func GetUserByUserId(client *supabase.Client, userId string) (*UserResponse, err
 		LogSupabaseError(supabaseError)
 		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
+	fmt.Printf("\n inside of getuser: %v", response)
 
 	var users []UserResponse
 	if err := json.Unmarshal([]byte(response), &users); err != nil {
 		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
 	}
+	fmt.Printf("\n inside of getuser: %v", users)
 
 	if len(users) == 0 {
 		return nil, fmt.Errorf("no user found for userId: %s", userId)
@@ -74,11 +78,52 @@ func GetDepositsByUserAddress(client *supabase.Client, walletAddress, walletType
 	return &deposits, nil
 }
 
+func GetOrderById(client *supabase.Client, id string) (*OrderAndUserResponse, error) {
+	params := map[string]interface{}{
+		"id": id,
+	}
+	response := client.Rpc("get_order_by_id", "exact", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	var order OrderAndUserResponse
+	if err := json.Unmarshal([]byte(response), &order); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	return &order, nil
+}
+
 func GetOrdersByUserId(client *supabase.Client, userId string) (*[]OrderResponse, error) {
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
-	response := client.Rpc("get_user_by_userid", "exact", params)
+	response := client.Rpc("get_orders_by_userid", "exact", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	var orders []OrderResponse
+	if err := json.Unmarshal([]byte(response), &orders); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	return &orders, nil
+}
+
+func GetOrdersByAddress(client *supabase.Client, walletAddress, walletType string) (*[]OrderResponse, error) {
+	params := map[string]interface{}{
+		"wallet_addr": walletAddress,
+		"wallet_t":    walletType,
+	}
+	response := client.Rpc("get_orders_by_address", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {

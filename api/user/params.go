@@ -63,11 +63,20 @@ type RemoveAuthorizedWalletRequestParams struct {
 	Signature     SignatureRaw `query:"signature"`
 }
 
-type GetUserByIdRequestParams struct {
+type GetUserByUserIdRequestParams struct {
 	UserId string `query:"user-id"`
 }
 
-type GetUserByAddressRequestParams struct {
+type GetUserByUserAddressRequestParams struct {
 	Address     string `query:"address"`
 	AddressType string `query:"type"` // referance to signature format (ecdsa/secp/edd/etc used by sig validation)
+}
+
+type GetDepositsByUserIdRequestParams struct {
+	UserId string `query:"user-id"`
+}
+
+type GetDepositsByUserAddressRequestParams struct {
+	WalletAddress string `query:"wallet-address"`
+	WalletType    string `query:"wallet-type"`
 }

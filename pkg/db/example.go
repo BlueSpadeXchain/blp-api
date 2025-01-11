@@ -38,18 +38,18 @@ func example() {
 	}
 
 	// Example: Create an order
-	order := map[string]interface{}{
-		"userid":     "example_user_id",
-		"order_type": "long",
-		"leverage":   5.5,
-		"pair":       "ETH-USD",
-		"amount":     200000000, // 200 nano-USD
-		"status":     "pending",
-	}
-	err = CreateOrder(supabaseClient, order)
-	if err != nil {
-		log.Printf("Error creating order: %v", err)
-	}
+	// order := map[string]interface{}{
+	// 	"userid":     "example_user_id",
+	// 	"order_type": "long",
+	// 	"leverage":   5.5,
+	// 	"pair":       "ETH-USD",
+	// 	"amount":     200000000, // 200 nano-USD
+	// 	"status":     "pending",
+	// }
+	// err = CreateOrder(supabaseClient, order)
+	// if err != nil {
+	// 	log.Printf("Error creating order: %v", err)
+	// }
 
 	// Example: Modify an order
 	orderUpdate := map[string]interface{}{

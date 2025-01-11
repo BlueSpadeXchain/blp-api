@@ -21,5 +21,5 @@ func getPair(pairString string) (string, error) {
 		return pairHex, nil
 	}
 
-	return "", fmt.Errorf("unsupporting pair name: %s", pairString)
+	return "", fmt.Errorf("unsupported pair name: %s", pairString)
 }

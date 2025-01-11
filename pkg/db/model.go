@@ -1,17 +1,17 @@
 package db
 
 type UserResponse struct {
-	ID            string `json:"id"`
-	UserID        string `json:"userid"`
-	WalletAddress string `json:"wallet_address"`
-	WalletType    string `json:"wallet_type"`
-	Balance       int64  `json:"balance"`
-	PerpBalance   int64  `json:"perp_balance"`
-	EscrowBalance int64  `json:"escrow_balance"`
-	StakeBalance  int64  `json:"stake_balance"`
-	FrozenBalance int64  `json:"frozen_balance"`
-	TotalBalance  int64  `json:"total_balance"`
-	CreatedAt     string `json:"created_at"`
+	ID            string  `json:"id"`
+	UserID        string  `json:"userid"`
+	WalletAddress string  `json:"wallet_address"`
+	WalletType    string  `json:"wallet_type"`
+	Balance       float64 `json:"balance"`
+	PerpBalance   float64 `json:"perp_balance"`
+	EscrowBalance float64 `json:"escrow_balance"`
+	StakeBalance  float64 `json:"stake_balance"`
+	FrozenBalance float64 `json:"frozen_balance"`
+	TotalBalance  float64 `json:"total_balance"`
+	CreatedAt     string  `json:"created_at"`
 }
 
 type OrderResponse struct {
@@ -19,14 +19,17 @@ type OrderResponse struct {
 	UserID     string  `json:"userid"`
 	OrderType  string  `json:"order_type"`
 	Leverage   float64 `json:"leverage"`
-	Pair       string  `json:"pair"`
-	Amount     float64 `json:"amount"`
 	Status     string  `json:"status"`
 	EntryPrice float64 `json:"entry_price"`
-	MarkPrice  float64 `json:"mark_price"`
 	LiqPrice   float64 `json:"liq_price"`
 	CreatedAt  string  `json:"created_at"`
 	EndedAt    string  `json:"ended_at"`
+	Collateral float64 `json:"collateral"`
+}
+
+type OrderAndUserResponse struct {
+	Order OrderResponse `json:"order"`
+	User  UserResponse  `json:"user"`
 }
 
 type DepositResponse struct {

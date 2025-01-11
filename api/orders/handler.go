@@ -1,54 +1,5 @@
 package orderHandler
 
-// func Handler(w http.ResponseWriter, r *http.Request) {
-// 	var orderReq OrderRequest
-// 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	if !validateSignature(orderReq) {
-// 		http.Error(w, "Invalid signature", http.StatusUnauthorized)
-// 		return
-// 	}
-
-// 	client := postgrest.NewClient("https://arlgbqlmnvdeglgwtxic.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFybGdicWxtbnZkZWdsZ3d0eGljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjIxMjgwMzcsImV4cCI6MjAzNzcwNDAzN30.0rs1ghN-Nt31Hjx5IbaXwN9c4wX38FO0tvC5b9qWUaA")
-
-// 	// Check if user has sufficient funds
-// 	resp, err := client.From("accounts").Select("*").Eq("signer", orderReq.Signer).Single().Execute()
-// 	if err != nil || resp.StatusCode != http.StatusOK {
-// 		http.Error(w, "User account not found", http.StatusNotFound)
-// 		return
-// 	}
-
-// 	var userFunds map[string]interface{}
-// 	if err := json.Unmarshal(resp.Body, &userFunds); err != nil {
-// 		http.Error(w, "Failed to parse user account data", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Add the order to the database
-// 	order := OrderData{
-// 		Signer:    orderReq.Signer,
-// 		ChainId:   orderReq.ChainId,
-// 		MessageId: orderReq.MessageId,
-// 		OrderData: orderReq.OrderData,
-// 		Status:    "pending",
-// 	}
-
-// 	_, err = client.From("orders").Insert(order, false, "", "").Execute()
-// 	if err != nil {
-// 		http.Error(w, "Failed to add order", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	orderRes := OrderResponse{
-// 		Success: true,
-// 		Data:    &order,
-// 	}
-// 	json.NewEncoder(w).Encode(orderRes)
-// }
-
 import (
 	"encoding/json"
 	"fmt"
@@ -58,6 +9,7 @@ import (
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -112,16 +64,24 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		// 	response, err = CloseOrderRequest(r)
 		// 	HandleResponse(w, r, supabaseClient, response, err)
 		// 	return
-		case "create-order-unsigned":
-			response, err = OrderRequest(r, supabaseClient)
+		case "create-order-unsigned": // returns order with uuid + hash to sign
+			response, err = UnsignedOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "create-order-signed":
-			response, err = OrderRequest(r, supabaseClient)
+		case "create-order-signed": // order must include order uuid, and signature
+			response, err = SignedOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "get-orders-by-user-id":
+			response, err = GetOrdersByUserIdRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "get-orders-by-user-address":
+			response, err = GetOrdersByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "get-orders":
-			response, err = GetOrdersRequest(r, supabaseClient)
+			response, err = GetOrderByIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		default:
@@ -137,8 +97,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func HandleResponse(w http.ResponseWriter, r *http.Request, supabaseClient *supabase.Client, response interface{}, err error) {
 	if err != nil {
 		if logErr := db.LogError(supabaseClient, err, r.URL.Query().Get("query"), response); logErr != nil {
-			fmt.Printf("Failed to log error: %v\n", logErr.Error())
+			utils.LogError("Failed to log error", logErr.Error())
 		}
+
+		logrus.Error(err.Error())
 
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)

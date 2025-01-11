@@ -1,6 +1,6 @@
 package orderHandler
 
-func validateOrderRequest(params OrderRequestParams) error {
+func validateOrderRequest() error {
 	// _, relayAddress, err := utils.EnvKey2Ecdsa()
 	// if err != nil {
 	// 	return err

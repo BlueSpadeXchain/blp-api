@@ -69,10 +69,12 @@ func main() {
 	if debugMode == "true" || debugMode == "1" {
 		logrus.SetLevel(logrus.DebugLevel)
 	} else {
-		logrus.SetLevel(logrus.InfoLevel)
+		logrus.SetLevel(logrus.FatalLevel)
 	}
 
 	logrus.SetFormatter(&CustomLogFormatter{})
+
+	logrus.Warning("program starting in debug mode...")
 
 	http.HandleFunc("/api/order", OrderHandler.Handler)
 	http.HandleFunc("/api/info", InfoHandler.Handler)

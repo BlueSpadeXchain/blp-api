@@ -37,7 +37,7 @@ func ParseAndValidateParams(r *http.Request, params interface{}) error {
 	missingFields := []string{}
 	allowedFields := make(map[string]struct{})
 
-	fmt.Printf("\nfieldType.Type: %v", typ)
+	LogInfo("query", fmt.Sprint(typ))
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
 		fieldType := typ.Field(i)
@@ -48,7 +48,6 @@ func ParseAndValidateParams(r *http.Request, params interface{}) error {
 			allowedFields[queryTag] = struct{}{}
 		}
 
-		// fmt.Printf("\nfieldType.Name: %v", fieldType.Name)
 		if _, exists := typ.FieldByName(fieldType.Name); exists {
 			if field.Kind() == reflect.Struct {
 				// Recursively parse nested struct fields
@@ -226,7 +225,11 @@ func EnableCORS(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		fmt.Printf("Method: %s, URL: %s", r.Method, r.URL)
+
+		LogInfo("API Request", FormatKeyValueLogs([][2]string{
+			{"Method", r.Method},
+			{"URL", fmt.Sprintf("%v", r.URL)},
+		}))
 
 		next.ServeHTTP(w, r)
 	})

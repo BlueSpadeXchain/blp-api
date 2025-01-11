@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 )
+// url := "https://hermes.pyth.network/v2/updates/price/stream"
 
 // PriceData represents the structured price feed data
 type PriceData struct {

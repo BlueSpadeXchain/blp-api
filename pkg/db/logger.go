@@ -20,7 +20,7 @@ func FormatKeyValueSupabase(data [][2]string) string {
 }
 
 func LogSupabaseError(message SupabaseError) {
-	logrus.Info(fmt.Sprintf(
+	logrus.Error(fmt.Sprintf(
 		"\033[1m%s\033[0m:\n%s",
 		"Supabase response error",
 		utils.FormatKeyValueLogs([][2]string{

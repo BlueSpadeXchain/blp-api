@@ -19,6 +19,10 @@ func FormatKeyValueLogs(data [][2]string) string {
 }
 
 func LogInfo(title string, message string) {
+	if logrus.GetLevel() < logrus.InfoLevel {
+		return
+	}
+
 	logrus.Info(fmt.Sprintf(
 		"\033[1m%s\033[0m:\n%s",
 		title,
