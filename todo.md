@@ -45,10 +45,10 @@ protocol orders take priority
   - [x] create internal error wrapper
   - [x] create error sql table generation call
 - [ ] order
-  - [ ] order validation with price feed and balance
-  - [ ] order math
-    - [ ] test
-  - [ ] create order
+  - [x] order validation with price feed and balance
+  - [x] order math
+    - [x] test
+  - [x] create order
   - [ ] modify order
   - [ ] group merge orders
 - [x] create listener for contract changes
@@ -65,8 +65,56 @@ protocol orders take priority
     - [x] launch VM
     - [x] activate
     - [ ] deploy ci/cd for VM
-  - [ ] get db and initialize liquidations call to api
+  - [x] get db and initialize liquidations call to api
+- [ ] organize sql queries
+- [ ] fix sql files for sqllite testing
+- [ ] add global balance tracking
+- [ ] scheduled distributions
+- [ ] deposit/stake change to use price feed latest price when depositing
+- [ ] enable fees
+  - [ ] from opening
+  - [ ] from closing
+  - [ ] from liquidations
+  - [ ] utilization fee
+- [ ] api documentation
+- [ ] readme sysdoc
+- [ ] order queue
+- [ ] loadbalancer
+- [ ] ts example script
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
-- [ ] add confirmation validation in the case of reordering
+- [ ] pen test
+- [ ] stress test
+- [ ] cost analysis report cost<>service provider
+
+### Later TODO
+- [ ] eddsa key validation
+- [ ] solana escrow listener
+  - [ ] listen to solana blocks
+  - [ ] parse solana block events
+  - [ ] listen to eclipse blocks
+  - [ ] parse solana block events
+- [ ] solana escrow contract
+  - [ ] create contract
+  - [ ] anchor test
+  - [ ] live test
+- [ ] create library for generalized utils resources
+- [ ] utilize grpc
+- [ ] rename get_orders_by_address to get_orders_by_user_address
+- [ ] tracking protocol
+  - [ ] protocol stats
+  - [ ] statis gui
+  - [ ] downtime/maintenence feed/history
+- [ ] backup
+  - [ ] tables snapshot
+  - [ ] tables rollback
+- [ ] enable protection (DiD)
+  - [ ] kill switches
+    - [ ] db
+    - [ ] smart contracts
+    - [ ] backend
+    - [ ] bots
+  - [ ] failsafe quarantine 
+  - [ ]
+- [ ] reduce function/table access privalages
