@@ -118,3 +118,4 @@ protocol orders take priority
   - [ ] failsafe quarantine 
   - [ ]
 - [ ] reduce function/table access privalages
+- [ ] docker image to run tests

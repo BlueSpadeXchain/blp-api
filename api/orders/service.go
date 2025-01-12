@@ -28,23 +28,6 @@ import (
 // 	return nil, nil
 // }
 
-type GetOrdersByUserAddressRequestParams struct {
-	WalletAddress string `query:"wallet-address"`
-	WalletType    string `query:"wallet-type"`
-	OrderType     string `query:"order-type" optional:"true"`   // 'long', 'short'
-	OrderStatus   string `query:"order-status" optional:"true"` // 'unsigned', 'pending', 'filled', 'canceled', 'closed', 'liquidated'
-}
-
-type GetOrdersByUserIdRequestParams struct {
-	UserId      string `query:"user-id"`
-	OrderType   string `query:"order-type" optional:"true"` // filter results
-	OrderStatus string `query:"order-status" optional:"true"`
-}
-
-type GetOrdersByIdRequestParams struct {
-	OrderId string `query:"order-id"`
-}
-
 func GetOrdersByUserAddressRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByUserAddressRequestParams) (interface{}, error) {
 	var params *GetOrdersByUserAddressRequestParams
 

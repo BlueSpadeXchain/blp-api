@@ -16,3 +16,20 @@ type SignedOrderRequestParams struct {
 	S       string `query:"s"`
 	V       string `query:"v"`
 }
+
+type GetOrdersByUserAddressRequestParams struct {
+	WalletAddress string `query:"wallet-address"`
+	WalletType    string `query:"wallet-type"`
+	OrderType     string `query:"order-type" optional:"true"`   // 'long', 'short'
+	OrderStatus   string `query:"order-status" optional:"true"` // 'unsigned', 'pending', 'filled', 'canceled', 'closed', 'liquidated'
+}
+
+type GetOrdersByUserIdRequestParams struct {
+	UserId      string `query:"user-id"`
+	OrderType   string `query:"order-type" optional:"true"` // filter results
+	OrderStatus string `query:"order-status" optional:"true"`
+}
+
+type GetOrdersByIdRequestParams struct {
+	OrderId string `query:"order-id"`
+}

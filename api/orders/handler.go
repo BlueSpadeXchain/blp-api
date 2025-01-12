@@ -72,6 +72,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = SignedOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "get-order-by-id":
+			response, err = GetOrderByIdRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// case "get-orders-by-id":
+		// 	response, err = GetOrdersByIdRequest(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
 		case "get-orders-by-user-id":
 			response, err = GetOrdersByUserIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
