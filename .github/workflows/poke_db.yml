@@ -1,21 +1,16 @@
-name: Supabase Cron Job
+name: Wake-up Supabase Cron Job
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # Every 5 minutes
+    - cron: "* * */4 * *"
 
 jobs:
   cron:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Debug Environment Variables
-        run: |
-          echo "Supabase URL: ${SUPABASE_URL}"
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
 
-      - name: Log to Supabase
+      - name: Poke Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
