@@ -2,13 +2,19 @@ name: Supabase Cron Job
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # Every 48 hours (2 days)
+    - cron: "*/5 * * * *" # Every 5 minutes
 
 jobs:
   cron:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug Environment Variables
+        run: |
+          echo "Supabase URL: ${SUPABASE_URL}"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+
       - name: Log to Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -24,3 +30,6 @@ jobs:
               "message": "",
               "context": ""
             }'
+
+      - name: Another Task
+        run: echo "Running another task!"
