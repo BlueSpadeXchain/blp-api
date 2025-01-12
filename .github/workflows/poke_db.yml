@@ -31,5 +31,3 @@ jobs:
               "context": ""
             }'
 
-      - name: Another Task
-        run: echo "Running another task!"
