@@ -2,10 +2,10 @@ name: Supabase Cron Job
 
 on:
   schedule:
-    - cron: "0 4 */2 * *" # Every 48 hours (2 days)
+    - cron: "33 13 */2 * *" # Every 48 hours (2 days)
 
 jobs:
-  log-to-supabase:
+  cron:
     runs-on: ubuntu-latest
 
     steps:
