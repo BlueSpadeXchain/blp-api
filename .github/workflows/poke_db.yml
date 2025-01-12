@@ -2,7 +2,7 @@ name: Supabase Cron Job
 
 on:
   schedule:
-    - cron: "34 13 * * *" # Every 48 hours (2 days)
+    - cron: "0 14 * * *" # Every 48 hours (2 days)
 
 jobs:
   cron:
