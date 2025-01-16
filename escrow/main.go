@@ -70,10 +70,9 @@ func fetchData(url string) {
 }
 
 func main() {
-	serverEnv := flag.String("server", "production", "Specify the server environment (local/production)")
-	flag.Parse()
 
-	chainIdFlag := flag.String("chain-id", "", "Specify the chain id (default anvil)")
+	serverEnv := flag.String("server", "production", "Specify the server environment (local/production)")
+	chainIdFlag := flag.String("chainid", "", "Specify the chain id (default anvil)")
 	flag.Parse()
 
 	var envFile string

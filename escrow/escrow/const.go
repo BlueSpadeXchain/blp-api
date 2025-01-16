@@ -12,7 +12,7 @@ var chainRpcMap = map[string]string{
 	"0x03106A": "ws://testnet-rpc.bitlayer.org",
 	"200810":   "ws://testnet-rpc.bitlayer.org",
 	"0x4268":   "ws://ethereum-holesky-rpc.publicnode.com",
-	"17000":    "ws://ethereum-holesky-rpc.publicnode.com",
+	"17000":    "wss://ethereum-holesky-rpc.publicnode.com",
 	"0xAA36A7": "ws://ethereum-sepolia.publicnode.com",
 	"11155111": "ws://ethereum-sepolia.publicnode.com",
 	"0xF35A":   "ws://rpc.devnet.citrea.xyz",
@@ -32,6 +32,7 @@ func GetChainRpc(chainId string) (string, error) {
 var addressMap = map[string]string{
 	"":      "0x5FbDB2315678afecb367f032d93F642f64180aa3",
 	"31337": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+	"17000": "0x73Ae6bC869286f0b0D67483538593adB15c7f66f",
 }
 
 func getAddress(chainId string) (common.Address, error) {

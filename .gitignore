@@ -24,6 +24,8 @@ bin/
 # Environment variables file
 .env
 .env.local
+*.pub
+*.key
 
 node_modules/
 package-lock.json

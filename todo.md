@@ -82,6 +82,13 @@ protocol orders take priority
 - [ ] loadbalancer
 - [ ] ts example script
 - [x] poke test db cron job
+- [ ] withdrawls
+  - [ ] table log
+  - [ ] kill switch
+  - [ ] backend functions
+- [ ] staking
+  - [ ] blu/blp distribution
+  - [ ] "mint" usdc
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
