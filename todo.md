@@ -81,6 +81,7 @@ protocol orders take priority
 - [ ] order queue
 - [ ] loadbalancer
 - [ ] ts example script
+- [x] poke test db cron job
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
