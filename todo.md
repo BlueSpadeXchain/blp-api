@@ -66,9 +66,9 @@ protocol orders take priority
     - [x] activate
     - [ ] deploy ci/cd for VM
   - [x] get db and initialize liquidations call to api
-- [ ] organize sql queries
-- [ ] fix sql files for sqllite testing
-- [ ] add global balance tracking
+- [x] organize sql queries
+- [x] fix sql files for sqllite testing
+- [x] add global balance tracking
 - [ ] scheduled distributions
 - [ ] deposit/stake change to use price feed latest price when depositing
 - [ ] enable fees
