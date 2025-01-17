@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -64,7 +65,10 @@ func StartListener(rpcURL string, chainId string) {
 	logs := make(chan types.Log)
 	sub, err := client.SubscribeFilterLogs(context.Background(), query, logs)
 	if err != nil {
-		log.Fatal("Failed to subscribe to logs:", err)
+		logrus.Errorf("Failed to subscribe to logs:", err)
+		time.Sleep(time.Second)
+		go StartListener(rpcURL, chainId) // Restart listener
+		return
 	}
 
 	DepositEventSig := escrowABI.Events["DepositEvent"].ID
@@ -74,10 +78,15 @@ func StartListener(rpcURL string, chainId string) {
 	// fmt.Printf("\n StakingDepositEventSig: %v", StakingDepositEventSig)
 	// fmt.Printf("\n BurnRequestEventSig: %v", BurnRequestEventSig)
 
+	logrus.Info("Onchain listener began...")
+
 	for {
 		select {
 		case err := <-sub.Err():
-			log.Fatal(err)
+			logrus.Errorf("Subscription error: %v. Retrying in 5 seconds...", err)
+			time.Sleep(time.Second)
+			go StartListener(rpcURL, chainId) // Restart listener
+			return
 		case vLog := <-logs:
 			fmt.Println("BlockHash:", vLog.BlockHash.Hex())
 			fmt.Println("BlockNumber:", vLog.BlockNumber)
