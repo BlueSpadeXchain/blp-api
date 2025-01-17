@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -51,6 +52,11 @@ func ModifyUserBalance(client *supabase.Client, userID string, newBalance int64)
 }
 
 func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) {
+	_, err := uuid.Parse(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID format: %v", err)
+	}
+
 	params := map[string]interface{}{
 		"order_id": orderId,
 	}
@@ -69,8 +75,7 @@ func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) 
 	}
 
 	var order OrderResponse
-	err := json.Unmarshal([]byte(response), &order)
-	if err != nil {
+	if err := json.Unmarshal([]byte(response), &order); err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
 	}
 
