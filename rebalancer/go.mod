@@ -1,4 +1,5 @@
 module github.com/BlueSpadeXchain/blp-api/rebalancer
+replace github.com/BlueSpadeXchain/blp-api => ../
 
 go 1.23.4
 

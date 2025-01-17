@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/BlueSpadeXchain/blp-api/escrow/escrow"
-	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
+	"github.com/BlueSpadeXchain/blp-api/escrow/pkg/db"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
