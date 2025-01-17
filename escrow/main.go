@@ -73,32 +73,6 @@ func fetchData(url string) {
 }
 
 func main() {
-	for {
-		run()
-		logrus.Error("Bot encountered an error. Restarting in 1 seconds...")
-		time.Sleep(time.Second)
-	}
-}
-
-func run() {
-	defer func() {
-		if rec := recover(); rec != nil {
-			log.Printf("\nRecovered from panic: %v", rec)
-
-			supabaseUrl := os.Getenv("SUPABASE_URL")
-			supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
-			supabaseClient, err := supabase.NewClient(supabaseUrl, supabaseKey, nil)
-			if err == nil {
-				logErr := db.LogPanic(supabaseClient, fmt.Sprintf("%v", rec), nil)
-				if logErr != nil {
-					log.Printf("\nFailed to log panic to Supabase: %v", logErr)
-				}
-			} else {
-				log.Printf("\nFailed to create Supabase client for panic logging: %v", err)
-			}
-		}
-	}()
-
 	serverEnv := flag.String("server", "production", "Specify the server environment (local/production)")
 	chainIdFlag := flag.String("chainid", "", "Specify the chain id (default anvil)")
 	flag.Parse()
@@ -123,6 +97,32 @@ func run() {
 	}
 
 	logrus.SetFormatter(&CustomLogFormatter{})
+
+	for {
+		run(chainIdFlag)
+		logrus.Error("Bot encountered an error. Restarting in 1 seconds...")
+		time.Sleep(time.Second)
+	}
+}
+
+func run(chainIdFlag *string) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			log.Printf("\nRecovered from panic: %v", rec)
+
+			supabaseUrl := os.Getenv("SUPABASE_URL")
+			supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+			supabaseClient, err := supabase.NewClient(supabaseUrl, supabaseKey, nil)
+			if err == nil {
+				logErr := db.LogPanic(supabaseClient, fmt.Sprintf("%v", rec), nil)
+				if logErr != nil {
+					log.Printf("\nFailed to log panic to Supabase: %v", logErr)
+				}
+			} else {
+				log.Printf("\nFailed to create Supabase client for panic logging: %v", err)
+			}
+		}
+	}()
 
 	logrus.Info("Onchain listener starting...")
 
