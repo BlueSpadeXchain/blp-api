@@ -4,10 +4,7 @@ replace github.com/BlueSpadeXchain/blp-api => ../
 
 go 1.23.4
 
-require (
-	github.com/BlueSpadeXchain/blp-api v0.0.0-00010101000000-000000000000
-	github.com/ethereum/go-ethereum v1.14.12
-)
+require github.com/ethereum/go-ethereum v1.14.12
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
