@@ -39,7 +39,7 @@ func GetDepositsByUserId(client *supabase.Client, userId string) (*[]DepositResp
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
-	response := client.Rpc("get_user_by_userid", "exact", params)
+	response := client.Rpc("get_deposits_by_userid", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -61,7 +61,7 @@ func GetDepositsByUserAddress(client *supabase.Client, walletAddress, walletType
 		"wallet_t":    walletType,
 	}
 
-	response := client.Rpc("get_or_create_user", "exact", params)
+	response := client.Rpc("get_deposits_by_address", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -141,12 +141,13 @@ func GetOrdersByAddress(client *supabase.Client, walletAddress, walletType strin
 }
 
 func GetOrdersByUserAddress(client *supabase.Client, walletAddress, walletType string) (*[]OrderResponse, error) {
+	fmt.Print("\n inside of GetOrdersByUserAddress")
 	params := map[string]interface{}{
 		"wallet_addr": walletAddress,
 		"wallet_t":    walletType,
 	}
 
-	response := client.Rpc("get_or_create_user", "exact", params)
+	response := client.Rpc("get_orders_by_address", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -154,11 +155,13 @@ func GetOrdersByUserAddress(client *supabase.Client, walletAddress, walletType s
 		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
 
+	fmt.Printf("\n response: %v", response)
 	var orders []OrderResponse
 	err := json.Unmarshal([]byte(response), &orders)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
 	}
+	fmt.Printf("\n response: %v", &orders)
 
 	return &orders, nil
 }
