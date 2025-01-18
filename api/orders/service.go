@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	user "github.com/BlueSpadeXchain/blp-api/api/user"
-	"github.com/BlueSpadeXchain/blp-api/pkg/db"
+	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -121,10 +121,39 @@ func SignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		return nil, utils.ErrInternal(err.Error())
 	}
 
+	// fmt.Printf("\n order id: %v", response.ID)
+	// orderIdBytes := []byte(response.ID)
+	// orderIdHash := crypto.Keccak256(orderIdBytes)
+
+	// return UnsignedOrderRequestResponse{
+	// 	Order: *response,
+	// 	Hash:  hex.EncodeToString(orderIdHash),
+	// }, nil
+
+	// orderIdBytesTest := []byte("ae96c97c-4e0d-4b13-bae6-54efffc72859")
+	// orderIdHashTest := crypto.Keccak256(orderIdBytesTest)
+	// fmt.Printf("\n generated from input: %v", hex.EncodeToString(orderIdHashTest))
+	// fmt.Printf("\n generated from api:   %v", "8cebec0419712a2ed98cb3ddd8aec8e92cc71f1677af693cfb99732e287d5902")
+	// tempr, _ := hex.DecodeString("2fbf4a2ac97a29b60e3b56bc6392805e2a398ade1d9a31e1a80961347764a49f")
+	// temps, _ := hex.DecodeString("6a9c55b2242e00d371169cb650c89130eb58a81b352bd1146735ae7557488e48")
+	// tempv, _ := hex.DecodeString("00")
+	// signatureBytesTest := append(tempr, temps...)
+	// signatureBytesTest = append(signatureBytesTest, tempv...)
+	// if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHashTest, signatureBytesTest, common.HexToAddress("0xaf73d6bc4017518f45106c4eeb896204b99fd0e9")); !ok || err != nil {
+	// 	if err != nil {
+	// 		utils.LogError("error validating signature", err.Error())
+	// 		return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+	// 	} else {
+	// 		utils.LogError("signature validation failed", "invaid signature")
+	// 		return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+	// 	}
+	// }
+	// fmt.Print("\n concluded test")
+
 	orderIdBytes := []byte(params.OrderId)
 	orderIdHash := crypto.Keccak256(orderIdBytes)
 
-	signatureV, err := strconv.ParseUint(params.V, 10, 64)
+	signatureV, err := strconv.ParseUint(params.V, 16, 64) // the value from raw metamask is messed up
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid v value: %v", err.Error()))
 	}
@@ -287,6 +316,7 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid entry price: %v", err.Error()))
 	}
+	// /api/order?query=create-order-unsigned&user-id=04b89ffbb4f53a4e&pair=ethusd&value=1&entry=3505&slip=500&lev=1&position-type=long
 
 	// Calculate liquidation price
 	var liqPrice float64

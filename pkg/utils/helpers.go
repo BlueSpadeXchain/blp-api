@@ -280,6 +280,7 @@ func ValidateEvmEcdsaSignature(hash []byte, signature []byte, address common.Add
 
 	ethHash := append(EthDomainHeader, hash...)
 	unsignedHash := crypto.Keccak256(ethHash)
+	fmt.Printf("\n unsigned hash: %v", hex.EncodeToString(unsignedHash))
 
 	recoveredPubKey, err := crypto.SigToPub(unsignedHash, signature)
 	if err != nil {

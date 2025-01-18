@@ -62,7 +62,7 @@ func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) 
 	}
 
 	// Execute the RPC call
-	response := client.Rpc("sign_order", "exact", params)
+	response := client.Rpc("sign_order", "estimate", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {

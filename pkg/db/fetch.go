@@ -79,8 +79,9 @@ func GetDepositsByUserAddress(client *supabase.Client, walletAddress, walletType
 }
 
 func GetOrderById(client *supabase.Client, id string) (*OrderAndUserResponse, error) {
+	fmt.Printf("\n this is where i really am")
 	params := map[string]interface{}{
-		"id": id,
+		"id_": id,
 	}
 	response := client.Rpc("get_order_by_id", "exact", params)
 
