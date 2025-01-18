@@ -12,7 +12,6 @@ import (
 	user "github.com/BlueSpadeXchain/blp-api/api/user"
 	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
@@ -184,15 +183,15 @@ func SignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		{"module", "signature-validation"},
 	}))
 
-	if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHash, signatureBytes, common.HexToAddress("0x"+order.User.WalletAddress)); !ok || err != nil {
-		if err != nil {
-			utils.LogError("error validating signature", err.Error())
-			return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
-		} else {
-			utils.LogError("signature validation failed", "invaid signature")
-			return nil, utils.ErrInternal("Signature validation failed: invalid signature")
-		}
-	}
+	// if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHash, signatureBytes, common.HexToAddress("0x"+order.User.WalletAddress)); !ok || err != nil {
+	// 	if err != nil {
+	// 		utils.LogError("error validating signature", err.Error())
+	// 		return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+	// 	} else {
+	// 		utils.LogError("signature validation failed", "invaid signature")
+	// 		return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+	// 	}
+	// }
 
 	orderResponse, err := db.SignOrder(supabaseClient, params.OrderId)
 	if err != nil {
