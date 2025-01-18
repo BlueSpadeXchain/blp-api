@@ -311,10 +311,6 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid leverage value: %v", err.Error()))
 	}
 
-	entryPrice, err := strconv.ParseFloat(params.EntryPrice, 64)
-	if err != nil {
-		return nil, utils.ErrInternal(fmt.Sprintf("invalid entry price: %v", err.Error()))
-	}
 	// /api/order?query=create-order-unsigned&user-id=04b89ffbb4f53a4e&pair=ethusd&value=1&entry=3505&slip=500&lev=1&position-type=long
 
 	// Calculate liquidation price
@@ -338,11 +334,20 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 	}
 	slippageThreshold := markPrice * maxSlippage
 
+	var entryPrice float64
 	// Validate that the entryPrice is within acceptable slippage from the markPrice
-	if params.PositionType == "long" && (entryPrice-markPrice) > slippageThreshold {
-		return nil, fmt.Errorf("long position: entry price exceeds 5%% slippage from the mark price")
-	} else if params.PositionType == "short" && (markPrice-entryPrice) > slippageThreshold {
-		return nil, fmt.Errorf("short position: entry price exceeds 5%% slippage from the mark price")
+	if params.EntryPrice != "0" && params.EntryPrice != "" {
+		var err error
+		entryPrice, err = strconv.ParseFloat(params.EntryPrice, 64)
+		if err != nil {
+			return nil, utils.ErrInternal(fmt.Sprintf("invalid entry price: %v", err.Error()))
+		}
+
+		if params.PositionType == "long" && (entryPrice-markPrice) > slippageThreshold {
+			return nil, fmt.Errorf("long position: entry price exceeds 5%% slippage from the mark price")
+		} else if params.PositionType == "short" && (markPrice-entryPrice) > slippageThreshold {
+			return nil, fmt.Errorf("short position: entry price exceeds 5%% slippage from the mark price")
+		}
 	}
 
 	if params.PositionType == "long" && (markPrice <= liqPrice) {
