@@ -92,6 +92,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetOrderByIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "close-order":
+			response, err = CloseOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "cancel-order":
+			response, err = CancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))

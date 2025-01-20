@@ -51,6 +51,9 @@ protocol orders take priority
   - [x] create order
   - [ ] modify order
   - [ ] group merge orders
+  - [ ] limit order
+  - [ ] stop loss enabled
+  - [ ] take profit enabled
 - [x] create listener for contract changes
   - [x] create evm contract to be listened to
   - [x] create listener application
@@ -64,6 +67,8 @@ protocol orders take priority
   - [ ] rebalancer hosting
     - [x] launch VM
     - [x] activate
+    - [ ] use railway
+    - [ ] shutdown oracle vm
     - [ ] deploy ci/cd for VM
   - [x] get db and initialize liquidations call to api
 - [x] organize sql queries
@@ -89,6 +94,11 @@ protocol orders take priority
 - [ ] staking
   - [ ] blu/blp distribution
   - [ ] "mint" usdc
+- [ ] metrics
+  - [ ] test snapshot history
+  - [ ] gui for historical data
+  - [ ] create cron job to snapshot data (hourly or daily)
+  - [ ] create snapshot api
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

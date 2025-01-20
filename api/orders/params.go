@@ -17,6 +17,11 @@ type SignedOrderRequestParams struct {
 	V       string `query:"v"`
 }
 
+type ModifyOrderRequestParams struct {
+	OrderId   string `query:"order-id"`
+	NewStatus string `query:"new-status"`
+}
+
 type GetOrdersByUserAddressRequestParams struct {
 	WalletAddress string `query:"wallet-address"`
 	WalletType    string `query:"wallet-type"`
