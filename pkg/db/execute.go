@@ -85,21 +85,31 @@ func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) 
 func CreateOrder2(
 	client *supabase.Client,
 	userId, orderType, pair string,
-	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitAmount float64) (*OrderResponse2, error) {
+	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitValue, takeProfitCollateral float64) (*OrderResponse2, error) {
 	// Convert chainID, block, and depositNonce to string for TEXT type in the database
 	params := map[string]interface{}{
 		"user_id":     userId,
 		"order_type":  orderType,
 		"leverage":    leverage,
-		"pair":        pair,
+		"pair_id":     pair,
 		"collateral":  collateral,
 		"entry_price": entryPrice,
 		"liq_price":   liquidationPrice,
 		"max_price":   maxPrice,
-		"lim_price":   limitPrice,
-		"stop_price":  stopLossPrice,
-		"tp_price":    takeProfitPrice,
-		"tp_amount":   takeProfitAmount,
+	}
+
+	if limitPrice != 0 {
+		params["lim_price"] = limitPrice
+	}
+
+	if stopLossPrice != 0 {
+		params["stop_price"] = stopLossPrice
+	}
+
+	if takeProfitPrice != 0 && takeProfitValue != 0 && takeProfitCollateral != 0 {
+		params["tp_price"] = takeProfitPrice
+		params["tp_value"] = takeProfitValue
+		params["tp_collateral"] = takeProfitCollateral
 	}
 
 	// Execute the RPC call

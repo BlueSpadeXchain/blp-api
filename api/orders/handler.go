@@ -68,6 +68,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = UnsignedOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "create-order-unsigned2": // returns order with uuid + hash to sign
+			response, err = UnsignedOrder2Request(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
 		case "create-order-signed": // order must include order uuid, and signature
 			response, err = SignedOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
@@ -96,17 +100,17 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = CloseOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "cancel-order":
-			response, err = CancelOrderRequest(r, supabaseClient)
-			HandleResponse(w, r, supabaseClient, response, err)
-			return
+		// case "cancel-order":
+		// 	response, err = CancelOrderRequest(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))
 			return
 		}
 	}))
-
+	//userid funded: 1d2664a39eee6098
 	handlerWithCORS.ServeHTTP(w, r)
 }
 

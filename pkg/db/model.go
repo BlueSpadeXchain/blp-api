@@ -29,21 +29,27 @@ type OrderResponse struct {
 }
 
 type OrderResponse2 struct {
-	ID              string  `json:"id"`
-	UserID          string  `json:"userid"`
-	OrderType       string  `json:"order_type"`
-	Leverage        float64 `json:"leverage"`
-	PairId          string  `json:"pair"`
-	Status          string  `json:"status"`
-	EntryPrice      float64 `json:"entry_price"`
-	LiqPrice        float64 `json:"liq_price"`
-	LimitPrice      float64 `json:"limit_price"`
-	StopLossPrice   float64 `json:"stop_price"`
-	TakeProfitPrice float64 `json:"tp_price"`
-	MaxPrice        float64 `json:"max_price"`
-	CreatedAt       string  `json:"created_at"`
-	EndedAt         string  `json:"ended_at"`
-	Collateral      float64 `json:"collateral"`
+	// Pair                  string  `json:"pair"`
+	ID                   string  `json:"id"`
+	UserID               string  `json:"userid"`
+	OrderType            string  `json:"order_type"`
+	Leverage             float64 `json:"leverage"`
+	PairId               string  `json:"pair"`
+	OrderStatus          string  `json:"status"`
+	Collateral           float64 `json:"collateral"`
+	EntryPrice           float64 `json:"entry_price"`
+	LiquidationPrice     float64 `json:"liq_price"`
+	MaxPrice             float64 `json:"max_price"`
+	MaxValue             float64 `json:"max_value"`
+	LimitPrice           float64 `json:"limit_price"`
+	StopLossPrice        float64 `json:"stop_price"`
+	TakeProfitPrice      float64 `json:"tp_price"`
+	TakeProfitValue      float64 `json:"tp_value"`
+	TakeProfitCollateral float64 `json:"tp_collateral"`
+	CreatedAt            string  `json:"created_at"`
+	SignedAt             string  `json:"signed_at"`
+	StartedAt            string  `json:"started_at"`
+	EndedAt              string  `json:"ended_at"`
 }
 
 type OrderAndUserResponse struct {
