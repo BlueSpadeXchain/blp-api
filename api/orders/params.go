@@ -38,3 +38,19 @@ type GetOrdersByUserIdRequestParams struct {
 type GetOrdersByIdRequestParams struct {
 	OrderId string `query:"order-id"`
 }
+
+// set the ended_at timestamp
+// the signature ov
+type SignedOrderCloseOrderRequestParams struct {
+	OrderId string `query:"order-id"`
+	R       string `query:"r" optional:"true"`
+	S       string `query:"s" optional:"true"`
+	V       string `query:"v" optional:"true"`
+}
+
+type SignedOrderCancelOrderRequestParams struct {
+	OrderId string `query:"order-id"`
+	R       string `query:"r" optional:"true"`
+	S       string `query:"s" optional:"true"`
+	V       string `query:"v" optional:"true"`
+}

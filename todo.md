@@ -51,9 +51,9 @@ protocol orders take priority
   - [x] create order
   - [ ] modify order
   - [ ] group merge orders
-  - [ ] limit order
-  - [ ] stop loss enabled
-  - [ ] take profit enabled
+  - [x] limit order
+  - [x] stop loss enabled
+  - [x] take profit enabled
 - [x] create listener for contract changes
   - [x] create evm contract to be listened to
   - [x] create listener application
@@ -67,18 +67,18 @@ protocol orders take priority
   - [ ] rebalancer hosting
     - [x] launch VM
     - [x] activate
-    - [ ] use railway
+    - [x] use railway
     - [ ] shutdown oracle vm
     - [ ] deploy ci/cd for VM
   - [x] get db and initialize liquidations call to api
 - [x] organize sql queries
 - [x] fix sql files for sqllite testing
 - [x] add global balance tracking
-- [ ] scheduled distributions
-- [ ] deposit/stake change to use price feed latest price when depositing
+- [x] scheduled distributions
+- [x] deposit/stake change to use price feed latest price when depositing
 - [ ] enable fees
   - [ ] from opening
-  - [ ] from closing
+  - [x] from closing
   - [ ] from liquidations
   - [ ] utilization fee
 - [ ] api documentation
@@ -92,13 +92,15 @@ protocol orders take priority
   - [ ] kill switch
   - [ ] backend functions
 - [ ] staking
-  - [ ] blu/blp distribution
-  - [ ] "mint" usdc
+  - [x] blu/blp distribution
+  - [x] "mint" usdc
 - [ ] metrics
   - [ ] test snapshot history
   - [ ] gui for historical data
   - [ ] create cron job to snapshot data (hourly or daily)
   - [ ] create snapshot api
+- [ ] change liquidations from 100% to 99%
+  - [ ] change math for liqPrice calcualtion
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
