@@ -77,10 +77,10 @@ protocol orders take priority
 - [x] scheduled distributions
 - [x] deposit/stake change to use price feed latest price when depositing
 - [ ] enable fees
-  - [ ] from opening
+  - [x] from opening
   - [x] from closing
   - [ ] from liquidations
-  - [ ] utilization fee
+  - [x] utilization fee
 - [ ] api documentation
 - [ ] readme sysdoc
 - [ ] order queue
@@ -95,12 +95,13 @@ protocol orders take priority
   - [x] blu/blp distribution
   - [x] "mint" usdc
 - [ ] metrics
-  - [ ] test snapshot history
+  - [x] test snapshot history
   - [ ] gui for historical data
   - [ ] create cron job to snapshot data (hourly or daily)
   - [ ] create snapshot api
 - [ ] change liquidations from 100% to 99%
   - [ ] change math for liqPrice calcualtion
+- [ ] read replicas for all get calls (especially for rebalancer)
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

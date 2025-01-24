@@ -34,7 +34,7 @@ type OrderResponse2 struct {
 	UserID               string  `json:"userid"`
 	OrderType            string  `json:"order_type"`
 	Leverage             float64 `json:"leverage"`
-	PairId               string  `json:"pair"`
+	PairId               string  `json:"pair_id"`
 	OrderStatus          string  `json:"status"`
 	Collateral           float64 `json:"collateral"`
 	EntryPrice           float64 `json:"entry_price"`
@@ -55,6 +55,11 @@ type OrderResponse2 struct {
 type OrderAndUserResponse struct {
 	Order OrderResponse `json:"order"`
 	User  UserResponse  `json:"user"`
+}
+
+type OrderAndUserResponse2 struct {
+	Order OrderResponse2 `json:"order"`
+	User  UserResponse   `json:"user"`
 }
 
 type DepositResponse struct {
@@ -79,4 +84,51 @@ type SupabaseError struct {
 	Details string `json:"details"`
 	Hint    string `json:"hint"`
 	Message string `json:"message"`
+}
+
+type UnsignedCreateOrderResponse struct {
+	Order         OrderResponse2 `json:"order"`
+	SignatureId   string         `json:"signature_id"`
+	SignatureHash string         `json:"signature_hash"`
+	ExpiryTime    string         `json:"expiry_time"`
+}
+
+type UnsignedCloseOrderResponse struct {
+	OrderId       string `json:"order_id"`
+	SignatureId   string `json:"signature_id"`
+	SignatureHash string `json:"signature_hash"`
+	ExpiryTime    string `json:"expiry_time"`
+}
+
+type UnsignedCancelOrderResponse struct {
+	OrderId       string `json:"order_id"`
+	SignatureId   string `json:"signature_id"`
+	SignatureHash string `json:"signature_hash"`
+	ExpiryTime    string `json:"expiry_time"`
+}
+
+type SignedCancelOrderResponse struct {
+	Order        OrderResponse2 `json:"order"`
+	IsValid      bool           `json:"is_valid"`
+	ErrorMessage string         `json:"error_message"`
+}
+
+type SignedCloseOrderResponse struct {
+	Order        OrderResponse2 `json:"order"`
+	IsValid      bool           `json:"is_valid"`
+	ErrorMessage string         `json:"error_message"`
+}
+
+type GetSignatureValidationHashResponse struct {
+	Hash string `json:"signature_hash"`
+}
+
+type GlobalStateResponse struct {
+	Key       string  `json:"key"`
+	Value     float64 `json:"value"`
+	UpdatedAt string  `json:"updated_at"`
+}
+
+type GetSignatureHashResponse struct {
+	Hash string `json:"signature_hash"`
 }

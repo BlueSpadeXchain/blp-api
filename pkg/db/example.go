@@ -62,8 +62,8 @@ func example() {
 	}
 
 	// Example: Close an order
-	err = CloseOrder(supabaseClient, "example_order_id")
-	if err != nil {
-		log.Printf("Error closing order: %v", err)
-	}
+	// err = CloseOrder(supabaseClient, "example_order_id")
+	// if err != nil {
+	// 	log.Printf("Error closing order: %v", err)
+	// }
 }

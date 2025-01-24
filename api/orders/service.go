@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	user "github.com/BlueSpadeXchain/blp-api/api/user"
 	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
@@ -50,7 +51,7 @@ func GetOrdersByUserAddressRequest(r *http.Request, supabaseClient *supabase.Cli
 	return orders, nil
 }
 
-func GetOrdersByUserIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByUserIdRequestParams) (interface{}, error) {
+func GetOrdersByUserIdRequest_old(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByUserIdRequestParams) (interface{}, error) {
 	var params *GetOrdersByUserIdRequestParams
 
 	if len(parameters) > 0 {
@@ -73,7 +74,30 @@ func GetOrdersByUserIdRequest(r *http.Request, supabaseClient *supabase.Client, 
 	return orders, nil
 }
 
-func GetOrderByIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByIdRequestParams) (interface{}, error) {
+func GetOrdersByUserIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByUserIdRequestParams) (interface{}, error) {
+	var params *GetOrdersByUserIdRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &GetOrdersByUserIdRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	orders, err := db.GetOrdersByUserId2(supabaseClient, params.UserId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	return orders, nil
+}
+
+func GetOrderByIdRequest_old(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByIdRequestParams) (interface{}, error) {
 	var params *GetOrdersByIdRequestParams
 
 	if len(parameters) > 0 {
@@ -90,6 +114,29 @@ func GetOrderByIdRequest(r *http.Request, supabaseClient *supabase.Client, param
 	}
 
 	order, err := db.GetOrderById(supabaseClient, params.OrderId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	return order, nil
+}
+
+func GetOrderByIdRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByIdRequestParams) (interface{}, error) {
+	var params *GetOrdersByIdRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &GetOrdersByIdRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	order, err := db.GetOrderById2(supabaseClient, params.OrderId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
@@ -240,45 +287,11 @@ func GetCurrentPriceData(pair string) (PriceUpdate, error) {
 	return response.Parsed[0], nil
 }
 
-// func CreateOrder2(
-// 	client *supabase.Client,
-// 	userId, orderType, pair string,
-// 	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitAmount float64) (*OrderResponse2, error) {
-// 	// Convert chainID, block, and depositNonce to string for TEXT type in the database
-// 	params := map[string]interface{}{
-// 		"user_id":     userId,
-// 		"order_type":  orderType,
-// 		"leverage":    leverage,
-// 		"pair":        pair,
-// 		"collateral":  collateral,
-// 		"entry_price": entryPrice,
-// 		"liq_price":   liquidationPrice,
-// 		"max_price":   maxPrice,
-// 		"lim_price":   limitPrice,
-// 		"stop_price":  stopLossPrice,
-// 		"tp_price":    takeProfitPrice,
-// 		"tp_amount":   takeProfitAmount,
-// 	}
-
-type UnsignedOrder2RequestParams struct {
-	UserId            string `query:"user-id" optional:"true"`    // implied user has an existing account if to have collateral
-	Pair              string `query:"pair"`                       // Target perpetual, expects "BTC/USD", "ETH/USD", etc
-	Collateral        string `query:"value" optional:"true"`      // Collateral amount in USD
-	EntryPrice        string `query:"entry" optional:"true"`      // Entry price in USD
-	Slippage          string `query:"slip" optional:"true"`       // Max slippage (basis points, out of 10,000)
-	Leverage          string `query:"lev" optional:"true"`        // Leverage multiplier
-	PositionType      string `query:"order-type" optional:"true"` // "long" or "short"
-	LimitPrice        string `query:"lim-price" optional:"true"`
-	StopLossPrice     string `query:"stop-price" optional:"true"`
-	TakeProfitPrice   string `query:"tp-price" optional:"true"`
-	TakeProfitPercent string `query:"tp-percent" optional:"true"` // percent to close the position for take profit, when achieved the tp_price and tp_value are set to null
-}
-
 // http://localhost:8080/api/order?query=create-unsigned-order&user-id=1d2664a39eee6098&pair=ethusd&value=1000&entry=33867498&lev=5&order-type=long
 // http://localhost:8080/api/order?query=create-order-unsigned2&user-id=1d2664a39eee6098&pair=ethusd&value=1000&lev=5&order-type=short&lim-price=4000
 
-func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedOrder2RequestParams) (interface{}, error) {
-	var params *UnsignedOrder2RequestParams
+func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*CreateOrderRequestParams) (interface{}, error) {
+	var params *CreateOrderRequestParams
 	var markPrice, entryPrice, limitPrice, stopLossPrice, tpPrice, tpValue, tpCollateral, maxProfitPrice, liqPrice float64 // init as zero
 
 	fmt.Print("\n I got this far")
@@ -286,7 +299,7 @@ func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, par
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &UnsignedOrder2RequestParams{}
+		params = &CreateOrderRequestParams{}
 	}
 
 	if r != nil {
@@ -310,25 +323,23 @@ func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, par
 
 	pair, err := getPair(params.Pair)
 	if err != nil {
-		return nil, err
+		return nil, utils.ErrInternal(err.Error())
 	}
 
-	if params.LimitPrice == "" || params.EntryPrice == "" {
-		priceData, err := GetCurrentPriceData(pair)
-		if err != nil {
-			return nil, err
-		}
-		markPrice, _ = strconv.ParseFloat(priceData.Price.Price, 64)
-		exponent := priceData.Price.Expo
+	priceData, err := GetCurrentPriceData(pair)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	markPrice, _ = strconv.ParseFloat(priceData.Price.Price, 64)
+	exponent := priceData.Price.Expo
 
-		if exponent < 0 {
-			for i := int64(0); i < -int64(exponent); i++ {
-				markPrice /= 10
-			}
-		} else {
-			for i := int64(0); i < int64(exponent); i++ {
-				markPrice *= 10
-			}
+	if exponent < 0 {
+		for i := int64(0); i < -int64(exponent); i++ {
+			markPrice /= 10
+		}
+	} else {
+		for i := int64(0); i < int64(exponent); i++ {
+			markPrice *= 10
 		}
 	}
 
@@ -422,17 +433,17 @@ func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, par
 		switch params.PositionType {
 		case "long":
 			if liqPrice >= stopLossPrice {
-				return nil, utils.ErrInternal(fmt.Sprintf("stop loss price too low, liquidation price: %v", liqPrice))
+				return nil, utils.ErrInternal(fmt.Sprintf("stop loss %v price must exceed liquidation price: %v", params.PositionType, liqPrice))
 			}
 			if markPrice <= stopLossPrice {
-				return nil, utils.ErrInternal(fmt.Sprintf("stop loss price too high, entry price: %v", entryPrice))
+				return nil, utils.ErrInternal(fmt.Sprintf("stop loss %v price cannot exceed entry price: %v", params.PositionType, entryPrice))
 			}
 		case "short":
 			if liqPrice <= stopLossPrice {
-				return nil, utils.ErrInternal(fmt.Sprintf("stop loss price too high, liquidation price: %v", liqPrice))
+				return nil, utils.ErrInternal(fmt.Sprintf("stop loss %v price cannot exceed liquidation price: %v", params.PositionType, liqPrice))
 			}
 			if markPrice >= stopLossPrice {
-				return nil, utils.ErrInternal(fmt.Sprintf("stop loss price too hilowgh, entry price: %v", entryPrice))
+				return nil, utils.ErrInternal(fmt.Sprintf("stop loss %v price must exceed entry price: %v", params.PositionType, entryPrice))
 			}
 		default:
 			return nil, utils.ErrInternal(fmt.Sprintf("invalid position type: %s", params.PositionType))
@@ -448,7 +459,7 @@ func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, par
 		}
 		tpPrice = tpPrice_
 		if tpPrice <= 0 {
-			return nil, utils.ErrInternal(fmt.Sprintf("invalid take profit price: %v", err.Error()))
+			return nil, utils.ErrInternal(fmt.Sprintf("invalid take profit price"))
 		}
 		tpPercent, err := strconv.ParseFloat(params.TakeProfitPercent, 64)
 		if err != nil {
@@ -458,25 +469,31 @@ func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, par
 		if params.PositionType == "long" {
 			// For long positions: Profit when tpPrice > entryPrice
 			if tpPrice <= entryPrice {
-				return nil, utils.ErrInternal("Take profit price must be greater than the entry price for long positions")
+				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price must exceed entry price %v", params.PositionType, entryPrice))
+			}
+			if tpPrice >= maxProfitPrice {
+				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price cannot exceed max price: %v", params.PositionType, maxProfitPrice))
+			}
+			if tpPrice <= markPrice {
+				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price must exceed entry price: %v", params.PositionType, markPrice))
 			}
 			tpValue = tpCollateral * leverage * (1 + (tpPrice-markPrice)/markPrice)
 		} else if params.PositionType == "short" {
 			// For short positions: Profit when tpPrice < entryPrice
 			if tpPrice >= markPrice {
-				return nil, utils.ErrInternal("Take profit price must be less than the entry price for short positions")
+				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price must exceed entry price %v", params.PositionType, entryPrice))
+			}
+			if tpPrice >= maxProfitPrice {
+				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price cannot exceed max price: %v", params.PositionType, maxProfitPrice))
+			}
+			if tpPrice <= markPrice {
+				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price must exceed entry price: %v", params.PositionType, markPrice))
 			}
 			tpValue = tpCollateral * leverage * (1 + (markPrice-tpPrice)/markPrice)
 		} else {
 			return nil, utils.ErrInternal("Invalid order type")
 		}
 
-		if tpPrice >= maxProfitPrice {
-			return nil, utils.ErrInternal(fmt.Sprintf("take profit price cannot exceed max price: %v", maxProfitPrice))
-		}
-		if tpPrice <= markPrice {
-			return nil, utils.ErrInternal(fmt.Sprintf("take profit price must exceed entry price: %v", markPrice))
-		}
 	}
 
 	response, err := db.CreateOrder2(
@@ -498,18 +515,18 @@ func UnsignedOrder2Request(r *http.Request, supabaseClient *supabase.Client, par
 		return nil, utils.ErrInternal(fmt.Sprintf("db post response: %v", err.Error()))
 	}
 
-	LogCreateOrderResponse2("Supabase create_order response", *response)
+	LogCreateOrderResponse2("Supabase create_order response", response.Order)
 	//LogBeforeCreateOrderResponse(params.UserId, params.Pair, pair, collateral, entryPrice, entryPrice, liqPrice, leverage, params.PositionType, "unsigned")
 
 	// still need to make the hash that the user will sign
 	// thinking of just taking the keccak256 of the string order_.id
 
 	// fmt.Printf("\n order id: %v", response.ID)
-	orderIdBytes := []byte(response.ID)
+	orderIdBytes := []byte(response.Order.ID)
 	orderIdHash := crypto.Keccak256(orderIdBytes)
 
 	return UnsignedOrderRequestResponse2{
-		Order: *response,
+		Order: response.Order,
 		Hash:  hex.EncodeToString(orderIdHash),
 	}, nil
 }
@@ -654,35 +671,6 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 // f22cb3fe-3514-4b5d-a763-4c16e6b3330b
 // http://localhost:8080/api/order?query=create-unsigned-order&user-id=1d2664a39eee6098&pair=ethusd&collateral=1000&entry=33867498&slip=500&lev=10&position-type=long
 
-func CloseOrder(r *http.Request, parameters ...*OrderCloseParams) (interface{}, error) {
-	var params *OrderCloseParams
-
-	if len(parameters) > 0 {
-		params = parameters[0]
-	} else {
-		params = &OrderCloseParams{}
-	}
-
-	if r != nil {
-		if err := utils.ParseAndValidateParams(r, &params); err != nil {
-			return nil, utils.ErrInternal(fmt.Sprintf("failed to parse params: %s", err.Error()))
-		}
-	}
-
-	// if err := validateOrderClose(params); err != nil {
-	// 	return nil, err
-	// }
-
-	return nil, nil
-}
-
-// type SignedOrderRequestParams struct {
-// 	OrderId string `query:"order-id"`
-// 	R       string `query:"r"`
-// 	S       string `query:"s"`
-// 	V       string `query:"v"`
-// }
-
 func canModifyOrder(status string) error {
 	invalid := []string{"filled", "canceled", "closed", "liquidated"}
 	for _, i := range invalid {
@@ -704,7 +692,7 @@ func canCancelOrder(status string) error {
 }
 
 func canCloseOrder(status string) error {
-	invalid := []string{"unsigned", "filled", "canceled", "closed", "liquidated"}
+	invalid := []string{"unsigned", "filled", "canceled", "closed", "liquidated", "limit"}
 	for _, i := range invalid {
 		if status == i {
 			return fmt.Errorf("orders of status %v cannot be mutated", status)
@@ -713,13 +701,45 @@ func canCloseOrder(status string) error {
 	return nil
 }
 
-func CloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*ModifyOrderRequestParams) (interface{}, error) {
-	var params *ModifyOrderRequestParams
+func UnsignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedCloseOrderRequestParams) (interface{}, error) {
+	var params *UnsignedCloseOrderRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &ModifyOrderRequestParams{}
+		params = &UnsignedCloseOrderRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	if response, err := db.GetOrderById(supabaseClient, params.OrderId); err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	} else {
+		if err := canCloseOrder(response.Order.Status); err != nil {
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	response, err := db.CloseOrder(supabaseClient, params.OrderId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	return response, nil
+}
+
+func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedCloseOrderRequestParams) (interface{}, error) {
+	var params *SignedCloseOrderRequestParams
+	var markPrice, collateral, payoutValue, feeValue float64
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &SignedCloseOrderRequestParams{}
 	}
 
 	if r != nil {
@@ -730,39 +750,103 @@ func CloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, paramet
 	}
 
 	// need to fetch the order
-	order, err := db.GetOrderById(supabaseClient, params.OrderId)
+	response, err := db.GetOrderById2(supabaseClient, params.OrderId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
 
-	// order status
-	// need to make sure that the order status is only pending
-	// the user should not be able to mutate an unsigned, closed, filed, or cancelled order
+	order_ := response.Order
+	// user_ := response.User
 
-	// also need add stop loss and limit order for the leverage positions
-	// this means that the stop loss and limit are within the range of the closed positions
-	// additionally a field for 10x needs to be added as a closing price
-	if err := canCloseOrder(order.Order.Status); err != nil {
+	if err := canCloseOrder(order_.OrderStatus); err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
 
-	// params.NewStatus,
-	// need to capture mark price
-	// order.Order.
-	// 	orders, err := db.GetOrdersByUserAddress(supabaseClient, params.WalletAddress, params.WalletType)
-	// if err != nil {
-	// 	return nil, utils.ErrInternal(err.Error())
-	// }
-	return nil, nil
+	priceData, err := GetCurrentPriceData(order_.PairId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	markPrice, _ = strconv.ParseFloat(priceData.Price.Price, 64)
+	exponent := priceData.Price.Expo
+
+	if exponent < 0 {
+		for i := int64(0); i < -int64(exponent); i++ {
+			markPrice /= 10
+		}
+	} else {
+		for i := int64(0); i < int64(exponent); i++ {
+			markPrice *= 10
+		}
+	}
+
+	// do we want deposits
+	// do we want wthdraw fee (hmx does 0.3% for both)
+	// we need a max utilization percent (hmx does 80%)
+	// we need a delevergae buffer (20%)
+
+	result, err := db.GetGlobalStateMetrics(supabaseClient, []string{"current_borrowed", "current_liquidity"})
+	if result == nil || len(*result) != 2 {
+		return nil, utils.ErrInternal("unexpected response from GetGlobalStateMetrics")
+	}
+
+	var totalBorrowed, totalLiquidity float64
+	for _, metric := range *result {
+		switch metric.Key {
+		case "current_borrowed":
+			totalBorrowed = metric.Value
+		case "current_liquidity":
+			totalLiquidity = metric.Value
+		}
+	}
+
+	if order_.TakeProfitValue == 0 {
+		collateral = order_.Collateral - order_.TakeProfitCollateral - order_.Collateral*0.00025
+	} else {
+		collateral = order_.Collateral - order_.Collateral*0.00025
+	}
+
+	createdAt, err := time.Parse(time.RFC3339Nano, order_.CreatedAt)
+	if err != nil {
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid CreatedAt format: %v", err))
+	}
+	elapsedTime := time.Now().UTC().Sub(createdAt).Seconds()
+
+	if totalLiquidity == 0 {
+		return nil, utils.ErrInternal("total liquidity cannot be zero")
+	}
+	feePercent := (0.0001 * elapsedTime / 60 * totalBorrowed / totalLiquidity) + 0.00025
+
+	// need to calculate the v
+	switch order_.OrderType {
+	case "long":
+		payoutValue = collateral * order_.Leverage * (1 + (markPrice-order_.EntryPrice)/order_.EntryPrice)
+	case "short":
+		payoutValue = collateral * order_.Leverage * (1 + (order_.EntryPrice-markPrice)/order_.EntryPrice)
+	default:
+		return nil, utils.ErrInternal(fmt.Sprintf("unexpected order type: %v", order_.OrderType))
+	}
+
+	// Calculate feeValue and adjust value
+	feeValue = payoutValue * feePercent
+	payoutValue -= feeValue
+
+	closeResponse, err := db.SignCloseOrder(supabaseClient, params.OrderId, params.SignatureId, payoutValue, feeValue)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	if !closeResponse.IsValid {
+		return nil, utils.ErrInternal(closeResponse.ErrorMessage)
+	}
+	return closeResponse, nil
 }
 
-func CancelRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetOrdersByUserAddressRequestParams) (interface{}, error) {
-	var params *GetOrdersByUserAddressRequestParams
+func UnsignedCancelOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedCancelOrderRequestParams) (interface{}, error) {
+	var params *UnsignedCancelOrderRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &GetOrdersByUserAddressRequestParams{}
+		params = &UnsignedCancelOrderRequestParams{}
 	}
 
 	if r != nil {
@@ -772,12 +856,91 @@ func CancelRequest(r *http.Request, supabaseClient *supabase.Client, parameters 
 		}
 	}
 
-	orders, err := db.GetOrdersByUserAddress(supabaseClient, params.WalletAddress, params.WalletType)
+	if response, err := db.GetOrderById(supabaseClient, params.OrderId); err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	} else {
+		if err := canCancelOrder(response.Order.Status); err != nil {
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	response, err := db.CancelOrder(supabaseClient, params.OrderId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
-	return orders, nil
+	return response, nil
 }
 
-func StopLossOrder() {}
-func LimitOrder()    {}
+func SignedCancelOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedCancelOrderRequestParams) (interface{}, error) {
+	var params *SignedCancelOrderRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &SignedCancelOrderRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	signatureV, err := strconv.ParseUint(params.V, 16, 64) // the value from raw metamask is messed up
+	if err != nil {
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid v value: %v", err.Error()))
+	}
+
+	signatureR, err := hex.DecodeString(params.R)
+	if err != nil {
+		utils.LogError("invalid sig-s value", err.Error())
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-r value: %v", err.Error()))
+	}
+
+	signatureS, err := hex.DecodeString(params.S)
+	if err != nil {
+		utils.LogError("invalid sig-s value", err.Error())
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", err.Error()))
+	}
+
+	if signatureV >= 27 {
+		signatureV -= 27
+	}
+
+	signatureBytes := append(signatureR, signatureS...)
+	signatureBytes = append(signatureBytes, byte(signatureV))
+
+	// given an order-id,
+	// if response, err := db.GetOrderById(supabaseClient, params.OrderId); err != nil {
+	// 	return nil, utils.ErrInternal(err.Error())
+	// } else {
+	// 	if err := canCancelOrder(response.Order.Status); err != nil {
+	// 		return nil, utils.ErrInternal(err.Error())
+	// 	}
+	// }
+	if response, err := db.GetSignatureValidationHash(supabaseClient, params.SignatureId); err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	} else {
+		hash_, _ := hex.DecodeString(response.Hash)
+		logrus.Info(fmt.Sprintf("hash to evaluate: %v", hash_))
+		// if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHash, signatureBytes, common.HexToAddress("0x"+order.User.WalletAddress)); !ok || err != nil {
+		// 	if err != nil {
+		// 		utils.LogError("error validating signature", err.Error())
+		// 		return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+		// 	} else {
+		// 		utils.LogError("signature validation failed", "invaid signature")
+		// 		return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+		// 	}
+		// }
+	}
+
+	cancelResponse, err := db.SignCancelOrder(supabaseClient, params.OrderId, params.SignatureId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	if !cancelResponse.IsValid {
+		return nil, utils.ErrInternal(cancelResponse.ErrorMessage)
+	}
+	return cancelResponse, nil
+}
