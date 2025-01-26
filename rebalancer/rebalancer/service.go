@@ -21,7 +21,9 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
 	}
 	fmt.Printf("orders found: \n%+v", orders)
-
+	for _, order := range *orders {
+		LogCreateOrderResponse2(order)
+	}
 	// now need to process the orders
 }
 

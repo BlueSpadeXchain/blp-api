@@ -143,26 +143,27 @@ func LogCreateOrderResponse2(url string, response db.OrderResponse2) {
 
 	message := fmt.Sprintf(
 		"Order Returned: \033[1m%s\033[0m\n"+
-			"ID:       								%s\n"+
-			"UserID: 									%s\n"+
-			"Order Type: 							%s\n"+
-			"Leverage: 								%.2f\n"+
-			"Pair ID: 		  					%s\n"+
-			"Order Status: 						%s\n"+
-			"Collateral:  						%.2f\n"+
-			"Entry Price: 						%.2f\n"+
-			"Liquidation Price: 			%.2f\n"+
-			"Limit Order Price: 			%.2f\n"+
-			"Max Price: 							%.2f\n"+
-			"Max Value: 							%.2f\n"+
-			"Stop Loss Price: 				%.2f\n"+
-			"Take Profit Price: 			%.2f\n"+
-			"Take Profit Value: 			%.2f\n"+
-			"Take Profit Collateral: 	%.2f\n"+
-			"Created At: 							%s\n"+
-			"Signed At: 							%s\n"+
-			"Started At: 							%s\n"+
-			"Ended At: 								%s\n",
+			"ID:                      %s\n"+
+			"UserID:                  %s\n"+
+			"Order Type:              %s\n"+
+			"Leverage:                %.2f\n"+
+			"Pair ID:                 %s\n"+
+			"Order Status:            %s\n"+
+			"Collateral:              %.2f\n"+
+			"Entry Price:             %.2f\n"+
+			"Liquidation Price:       %.2f\n"+
+			"Limit Order Price:       %.2f\n"+
+			"Max Price:               %.2f\n"+
+			"Max Value:               %.2f\n"+
+			"Stop Loss Price:         %.2f\n"+
+			"Take Profit Price:       %.2f\n"+
+			"Take Profit Value:       %.2f\n"+
+			"Take Profit Collateral:  %.2f\n"+
+			"Created At:              %s\n"+
+			"Signed At:               %s\n"+
+			"Started At:              %s\n"+
+			"Ended At:                %s\n",
+		url,
 		response.ID,
 		response.UserID,
 		response.OrderType,
