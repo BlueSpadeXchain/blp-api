@@ -10,6 +10,7 @@ import (
 	"github.com/BlueSpadeXchain/blp-api/rebalancer/rebalancer"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"github.com/supabase-community/supabase-go"
 	// "github.com/BlueSpadeXchain/blp-api/pkg/utils"
 )
 
@@ -109,6 +110,13 @@ func main() {
 
 	url := "https://hermes.pyth.network/v2/updates/price/stream"
 
-	rebalancer.SubscribeToPriceStream(url, rebalancer.PriceFeedIds)
+	supabaseUrl := os.Getenv("SUPABASE_URL")
+	supabaseKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
+	supabaseClient, err := supabase.NewClient(supabaseUrl, supabaseKey, nil)
+	if err != nil {
+		logrus.Error("supabase client connection failed: ", err.Error())
+	}
+
+	rebalancer.SubscribeToPriceStream(supabaseClient, url, rebalancer.PriceFeedIds)
 
 }

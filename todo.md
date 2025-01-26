@@ -102,6 +102,7 @@ protocol orders take priority
 - [ ] change liquidations from 100% to 99%
   - [ ] change math for liqPrice calcualtion
 - [ ] read replicas for all get calls (especially for rebalancer)
+- [ ] stop loss price, has no indication of value, this should be precalculated
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

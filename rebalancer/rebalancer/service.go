@@ -5,12 +5,68 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/BlueSpadeXchain/blp-api/rebalancer/pkg/db"
 	"github.com/sirupsen/logrus"
+	"github.com/supabase-community/supabase-go"
 )
 
-func SubscribeToPriceStream(url string, ids []string) {
+func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []float64, minPrice, maxPrice float64) {
+	orders, err := db.GetOrdersParsingRange(supabaseClient, pairId, minPrice, maxPrice)
+	if err != nil {
+		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
+	}
+	fmt.Printf("orders found: \n%+v", orders)
+
+	// now need to process the orders
+}
+
+func processPrices(supabaseClient *supabase.Client, priceMap map[string][]float64) {
+
+	// Process the collected prices every 5 seconds
+	var minPrice, maxPrice float64
+	minPrice = 2000000 // set to a large enough value to cover all subvalues
+	for id, prices := range priceMap {
+		if len(prices) == 0 {
+			continue
+		}
+
+		for _, price := range prices {
+			if price < minPrice {
+				minPrice = price
+			}
+			if price > maxPrice {
+				maxPrice = price
+			}
+		}
+
+		logrus.Warning(fmt.Sprintf("max price: %v, min price: %v", maxPrice, minPrice))
+		logrus.Warning(fmt.Sprintf("price map: %v", priceMap))
+		processOrders(supabaseClient, id, prices, minPrice, maxPrice)
+	}
+}
+
+func SubscribeToPriceStream(supabaseClient *supabase.Client, url string, ids []string) {
+	var markPriceMap = make(map[string][]float64)
+	var mu sync.Mutex
+
+	go func() {
+		for {
+			time.Sleep(1 * time.Second) // Periodically process prices
+
+			mu.Lock()
+			processPrices(supabaseClient, markPriceMap)
+			for k := range markPriceMap {
+				delete(markPriceMap, k)
+			}
+			mu.Unlock()
+		}
+	}()
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		logrus.Fatal("Error creating request:", err)
@@ -45,11 +101,19 @@ func SubscribeToPriceStream(url string, ids []string) {
 		parsedResponse, ok := response.(Response)
 		if ok && err == nil {
 			for _, priceUpdate := range parsedResponse.Parsed {
-				fmt.Printf("ID: %s\n", priceUpdate.ID)
-				fmt.Printf("Price: %s\n", priceUpdate.Price.Price)
-				fmt.Printf("EMA Price: %s\n", priceUpdate.EmaPrice.Price)
-				fmt.Printf("Timestamp: %d\n", priceUpdate.Price.PublishTime)
-				fmt.Printf("Slot: %d\n", priceUpdate.Metadata.Slot)
+				// assume exponent always negative
+				markPrice, _ := strconv.ParseFloat(priceUpdate.Price.Price, 64)
+				exponent := priceUpdate.Price.Expo
+				for i := int64(0); i < -int64(exponent); i++ {
+					markPrice /= 10
+				}
+
+				mu.Lock()
+				markPriceMap[priceUpdate.ID] = append(markPriceMap[priceUpdate.ID], markPrice)
+				mu.Unlock()
+
+				logrus.Infof("Received Price Update - ID: %s, MarkPrice: %.6f", priceUpdate.ID, markPrice)
+
 			}
 		}
 	}
@@ -57,6 +121,8 @@ func SubscribeToPriceStream(url string, ids []string) {
 	if err := scanner.Err(); err != nil {
 		logrus.Error("Error reading from SSE stream:", err)
 	}
+
+	select {}
 
 }
 
