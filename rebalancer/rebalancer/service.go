@@ -20,11 +20,102 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 	if err != nil {
 		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
 	}
-	fmt.Printf("orders found: \n%+v", orders)
+	var ordersActivated, ordersFilled, ordersLiquidated, ordersStopped, pnlProfits, pnlLosses, treasuryProfit, vaultProfit, stakeProfit, liquidityProfit float64
+	var collateral float64
 	for _, order := range *orders {
 		LogCreateOrderResponse2(order)
+		// since the priceMap is sequenced in decending order, we can figure out which event was triggered first or multiple events were triggers
+
+		// need two degrees of triggers
+		// if limit is active -> if tp/stoploss -> if liq/max
+
+		// liq/max/stop -> end loop for order checking against prices
+		for _, mark := range priceMap {
+			var payout float64 // init to 0
+			var newStatus string // status after all prices
+			// we set the take profit value to null when it is hit
+			// giant if table is fine for now 
+			if order.OrderType == "long" {
+				// profits
+				if order.TakeProfitPrice <= mark {
+					payout += order.TakeProfitValue
+					order.TakeProfitValue = 0 // should be null
+				}
+				if order.MaxPrice <= mark {
+					payout += order.MaxValue - order.TakeProfitValue
+					newStatus = "filled"
+					break;
+				}
+				// losses
+				if order.StopLossPrice >= mark {
+					// we forgot to add stoploss value to our order table, for now  calculate it (but needs to be change to reduce latency on rebalancer)
+					payout -= order.TakeProfitValue
+					newStatus = "liquidated"
+					break;
+				}
+				if order.LiquidationPrice >= mark {
+					payout += order.MaxValue - order.TakeProfitValue
+					break;
+				}
+			}
+			
+		}
+
+		if order.
+		collateral = order.Collateral 
 	}
 	// now need to process the orders
+// 	ID:                      1d220d57-2864-4d2c-9631-8811d01714ea
+// UserID:                  1d2664a39eee6098
+// Order Type:              long
+// Leverage:                5.00
+// Pair ID:                 e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
+// Order Status:            unsigned
+// Collateral:              1000.00
+// Entry Price:             50000.00
+// Liquidation Price:       40000.00
+// Limit Order Price:       150000.00
+// Max Price:               10000.00
+// Max Value:               0.00
+// Stop Loss Price:         0.00
+// Take Profit Price:       52000.00
+// Take Profit Value:       2600.00
+// Take Profit Collateral:  500.00
+// Created At:              2025-01-26T06:36:44.080027
+// Signed At:               
+// Started At:              
+// Ended At:       
+
+
+
+
+// 2025-01-26 01:47:29 [warning] price map: map[
+// e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43:[104655.67 104655.75] 
+// ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace:[3300.2849714999998 3300.2776952599997]]
+// ID:                      706b3244-78f1-409a-a0da-c345e4dcbce3
+// UserID:                  1d2664a39eee6098
+// Order Type:              short
+// Leverage:                3.00
+// Pair ID:                 e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
+// Order Status:            unsigned
+// Collateral:              2000.00
+// Entry Price:             50000.00
+// Liquidation Price:       66666.67
+// Limit Order Price:       -116666.67
+// Max Price:               20000.00
+// Max Value:               0.00
+// Stop Loss Price:         0.00
+// Take Profit Price:       0.00
+// Take Profit Value:       0.00
+// Take Profit Collateral:  0.00
+// Created At:              2025-01-26T06:36:44.080027
+// Signed At:               
+// Started At:              
+// Ended At:   
+
+// we now need to form our group merge orders and users
+//if orders2.id = 706b3244-78f1-409a-a0da-c345e4dcbce3
+
 }
 
 func processPrices(supabaseClient *supabase.Client, priceMap map[string][]float64) {
@@ -114,7 +205,7 @@ func SubscribeToPriceStream(supabaseClient *supabase.Client, url string, ids []s
 				markPriceMap[priceUpdate.ID] = append(markPriceMap[priceUpdate.ID], markPrice)
 				mu.Unlock()
 
-				logrus.Infof("Received Price Update - ID: %s, MarkPrice: %.6f", priceUpdate.ID, markPrice)
+				//logrus.Infof("Received Price Update - ID: %s, MarkPrice: %.6f", priceUpdate.ID, markPrice)
 
 			}
 		}
@@ -122,6 +213,7 @@ func SubscribeToPriceStream(supabaseClient *supabase.Client, url string, ids []s
 
 	if err := scanner.Err(); err != nil {
 		logrus.Error("Error reading from SSE stream:", err)
+		// this should restart and log panic but fix later
 	}
 
 	select {}

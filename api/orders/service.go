@@ -672,7 +672,7 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 // http://localhost:8080/api/order?query=create-unsigned-order&user-id=1d2664a39eee6098&pair=ethusd&collateral=1000&entry=33867498&slip=500&lev=10&position-type=long
 
 func canModifyOrder(status string) error {
-	invalid := []string{"filled", "canceled", "closed", "liquidated"}
+	invalid := []string{"filled", "canceled", "closed", "liquidated", "stopped"}
 	for _, i := range invalid {
 		if status == i {
 			return fmt.Errorf("orders of status %v cannot be mutated", status)
@@ -682,7 +682,7 @@ func canModifyOrder(status string) error {
 }
 
 func canCancelOrder(status string) error {
-	invalid := []string{"pending", "filled", "canceled", "closed", "liquidated"}
+	invalid := []string{"pending", "filled", "canceled", "closed", "liquidated", "stopped"}
 	for _, i := range invalid {
 		if status == i {
 			return fmt.Errorf("orders of status %v cannot be mutated", status)
@@ -692,7 +692,7 @@ func canCancelOrder(status string) error {
 }
 
 func canCloseOrder(status string) error {
-	invalid := []string{"unsigned", "filled", "canceled", "closed", "liquidated", "limit"}
+	invalid := []string{"unsigned", "filled", "canceled", "closed", "liquidated", "limit", "stopped"}
 	for _, i := range invalid {
 		if status == i {
 			return fmt.Errorf("orders of status %v cannot be mutated", status)
