@@ -76,10 +76,10 @@ protocol orders take priority
 - [x] add global balance tracking
 - [x] scheduled distributions
 - [x] deposit/stake change to use price feed latest price when depositing
-- [ ] enable fees
+- [x] enable fees
   - [x] from opening
   - [x] from closing
-  - [ ] from liquidations
+  - [x] from liquidations
   - [x] utilization fee
 - [ ] api documentation
 - [ ] readme sysdoc
@@ -103,6 +103,7 @@ protocol orders take priority
   - [ ] change math for liqPrice calcualtion
 - [ ] read replicas for all get calls (especially for rebalancer)
 - [ ] stop loss price, has no indication of value, this should be precalculated
+- [ ] handleResponse needs to be revisioned to use utils.Error instead of error
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

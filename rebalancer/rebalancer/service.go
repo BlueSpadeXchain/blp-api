@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/BlueSpadeXchain/blp-api/rebalancer/pkg/db"
+	"github.com/BlueSpadeXchain/blp-api/rebalancer/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
@@ -20,8 +21,26 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 	if err != nil {
 		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
 	}
-	var ordersActivated, ordersFilled, ordersLiquidated, ordersStopped, pnlProfits, pnlLosses, treasuryProfit, vaultProfit, stakeProfit, liquidityProfit float64
-	var collateral float64
+	_, _, err = supabaseClient.
+		From("users").
+		Update(map[string]interface{}{
+			// Use PostgreSQL's additive syntax for updates
+			"treasuryProfit":  supabase.Client..Raw("treasuryProfit + ?", userUpdate.TreasuryProfit),
+			"vaultProfit":     supabase.Raw("vaultProfit + ?", userUpdate.VaultProfit),
+			"stakeProfit":     supabase.Raw("stakeProfit + ?", userUpdate.StakeProfit),
+			"liquidityProfit": supabase.Raw("liquidityProfit + ?", userUpdate.LiquidityProfit),
+			"pnl":             supabase.Raw("pnl + ?", userUpdate.PnL), // Assuming PnL is additive too
+		}).
+		Eq("id", userID).
+		Execute()
+
+	if err != nil {
+		logrus.Errorf("Failed to update user %s: %v", userID, err)
+	}
+	// we should be tracking tpTriggered
+	var ordersActivated, ordersFilled, ordersLiquidated, ordersStopped float64
+	var pnlProfits, pnlLosses, treasuryProfit, vaultProfit, stakeProfit, liquidityProfit, currentOrdersLimit, currentOrdersPending float64
+	// var openFees, closeFees float64
 	for _, order := range *orders {
 		LogCreateOrderResponse2(order)
 		// since the priceMap is sequenced in decending order, we can figure out which event was triggered first or multiple events were triggers
@@ -30,100 +49,227 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 		// if limit is active -> if tp/stoploss -> if liq/max
 
 		// liq/max/stop -> end loop for order checking against prices
-		for _, mark := range priceMap {
-			var payout float64 // init to 0
-			var newStatus string // status after all prices
+		var payout float64   // init to 0
+		var newStatus string // status after all prices
+		var closeFee float64
+		var openFee float64
+		for _, markPrice := range priceMap {
+			var closeFee_ float64
 			// we set the take profit value to null when it is hit
-			// giant if table is fine for now 
+			// still need to calculate pnl
+			collateral_ := order.Collateral * 0.99975
 			if order.OrderType == "long" {
-				// profits
-				if order.TakeProfitPrice <= mark {
-					payout += order.TakeProfitValue
-					order.TakeProfitValue = 0 // should be null
+				if order.OrderStatus == "pending" {
+					// profits
+					if order.TakeProfitPrice <= markPrice && order.TakeProfitValue > 0 {
+						value := (collateral_ - order.TakeProfitCollateral) * order.Leverage * (1 + (order.TakeProfitPrice-markPrice)/markPrice)
+						closeFee_ = value * 0.00025 // 0.025% fee
+						payout += value - closeFee
+						pnlProfits += order.TakeProfitValue // for now pnl for tp can be payout
+						order.TakeProfitValue = 0           // should be null (need to figure out how set numeric back to null)
+						// status should remain 'pending'
+						logrus.Info("executed take profit")
+						ordersFilled += 1
+					}
+					if order.MaxPrice <= markPrice {
+						var value float64
+						if order.TakeProfitValue == 0 && order.TakeProfitCollateral != 0 {
+							logrus.Info("executed fill after take profit")
+							value = (collateral_ - order.TakeProfitCollateral) * order.Leverage * (1 + (order.MaxPrice-markPrice)/markPrice)
+						} else { // if there is no tp collateral (implying not set)
+							// still need to fix the max price, should have basis of collateral * 0.00025
+							logrus.Info("executed fill")
+							value = collateral_ * order.Leverage * (1 + (order.MaxPrice-markPrice)/markPrice)
+						}
+						closeFee_ = value * 0.00025
+						closeFee += closeFee_
+						payout += value - closeFee
+						pnlProfits += value
+						newStatus = "filled"
+						ordersFilled += 1
+						currentOrdersPending -= 1
+
+						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
+							{"Id", fmt.Sprint(order.ID)},
+							{"openFee", fmt.Sprint(openFee)},
+							{"closeFee", fmt.Sprint(closeFee)},
+							{"old stats", fmt.Sprint(order.OrderStatus)},
+							{"new status", fmt.Sprint(newStatus)},
+						}))
+						break
+					}
+					// losses
+					//payoutValue = collateral * order_.Leverage * (1 + (markPrice-order_.EntryPrice)/order_.EntryPrice)
+					// we should have an auto stoploos (liquidation price) at 98.995%, todo (db)
+					if order.StopLossPrice >= markPrice && order.StopLossPrice > 0 {
+						logrus.Info("executed stop loss")
+						value := collateral_ * order.Leverage * (1 + (order.StopLossPrice-order.EntryPrice)/order.EntryPrice)
+						closeFee_ = value * 0.00025
+						closeFee += closeFee_
+						payout = value - closeFee_
+						pnlLosses += collateral_ - payout
+						newStatus = "stopped"
+						ordersStopped += 1
+						currentOrdersPending -= 1
+
+						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
+							{"Id", fmt.Sprint(order.ID)},
+							{"openFee", fmt.Sprint(openFee)},
+							{"closeFee", fmt.Sprint(closeFee)},
+							{"old stats", fmt.Sprint(order.OrderStatus)},
+							{"new status", fmt.Sprint(newStatus)},
+						}))
+						break
+					}
+					// if we does auto stop loss, orders will always have a positive value, but calc is an extra load on our system
+					if order.LiquidationPrice >= markPrice || markPrice <= 0 {
+						// markPrice <= 0 shouldn't be possible
+						logrus.Info("executed liquidation")
+						closeFee_ = collateral_ * 0.99 // openFee already applied
+						closeFee += closeFee_
+						pnlLosses += closeFee_ - collateral_
+						newStatus = "liquidated"
+						ordersLiquidated += 1
+						currentOrdersPending -= 1
+
+						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
+							{"Id", fmt.Sprint(order.ID)},
+							{"openFee", fmt.Sprint(openFee)},
+							{"closeFee", fmt.Sprint(closeFee)},
+							{"old stats", fmt.Sprint(order.OrderStatus)},
+							{"new status", fmt.Sprint(newStatus)},
+						}))
+						break
+					}
+				} else if order.OrderStatus == "limit" { // assuming lim != 0, hope an intern doesn't break this
+					// trigger active, apply open fees, and set entryPrice to markPrice
+					if (order.LimitPrice > order.EntryPrice && markPrice >= order.LimitPrice) ||
+						(order.LimitPrice < order.EntryPrice && markPrice <= order.LimitPrice) {
+						logrus.Info("executed limit order")
+						openFee = collateral_ * 0.00025
+						order.EntryPrice = order.LimitPrice
+						ordersActivated += 1
+						currentOrdersLimit -= 1
+						currentOrdersPending += 1
+						newStatus = "pending"
+					}
 				}
-				if order.MaxPrice <= mark {
-					payout += order.MaxValue - order.TakeProfitValue
-					newStatus = "filled"
-					break;
+			} else if order.OrderType == "short" {
+				if order.OrderStatus == "pending" {
+					//
+				} else if order.OrderStatus == "limit" { // assuming lim != 0, hope an intern doesn't break this
+					// trigger active, apply open fees, and set entryPrice to markPrice
+					if (order.LimitPrice > order.EntryPrice && markPrice >= order.LimitPrice) ||
+						(order.LimitPrice < order.EntryPrice && markPrice <= order.LimitPrice) {
+						logrus.Info("executed limit order")
+						openFee = collateral_ * 0.00025
+						order.EntryPrice = order.LimitPrice
+						ordersActivated += 1
+						currentOrdersLimit -= 1
+						currentOrdersPending += 1
+						newStatus = "pending"
+					}
 				}
-				// losses
-				if order.StopLossPrice >= mark {
-					// we forgot to add stoploss value to our order table, for now  calculate it (but needs to be change to reduce latency on rebalancer)
-					payout -= order.TakeProfitValue
-					newStatus = "liquidated"
-					break;
-				}
-				if order.LiquidationPrice >= mark {
-					payout += order.MaxValue - order.TakeProfitValue
-					break;
-				}
+
 			}
-			
+
+			closeFee += closeFee_
+
+			utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
+				{"Id", fmt.Sprint(order.ID)},
+				{"openFee", fmt.Sprint(openFee)},
+				{"closeFee", fmt.Sprint(closeFee)},
+				{"old stats", fmt.Sprint(order.OrderStatus)},
+				{"new status", fmt.Sprint(newStatus)},
+			}))
+
 		}
 
-		if order.
-		collateral = order.Collateral 
+		// we really need to test the interations over the table but for now just test end result
+		// LogProcessedOrderResult()
+		// need to increment: treasuryProfit, vaultProfit, stakeProfit, liquidityProfit
+		utils.LogInfo("Processed order result", utils.FormatKeyValueLogs([][2]string{
+			{"Id", fmt.Sprint(order.ID)},
+			{"Status", fmt.Sprint(newStatus)},
+			{"PnL", fmt.Sprint(payout)},            // pnl percent is redundant to rebalancer
+			{"treasuryProfit", fmt.Sprint(payout)}, // need to calc
+			{"vaultProfit", fmt.Sprint(payout)},
+			{"stakeProfit", fmt.Sprint(payout)},
+			{"liquidityProfit", fmt.Sprint(payout)},
+		}))
+
 	}
+
+	// output that will be used to merge new metric data from processed orders
+	utils.LogInfo("Processed orders results", utils.FormatKeyValueLogs([][2]string{
+		{"ordersActivated", fmt.Sprint(ordersActivated)},
+		{"ordersFilled", fmt.Sprint(ordersFilled)},
+		{"ordersLiquidated", fmt.Sprint(ordersLiquidated)},
+		{"ordersStopped", fmt.Sprint(ordersStopped)},
+		{"pnlProfits", fmt.Sprint(pnlProfits)},
+		{"pnlLosses", fmt.Sprint(pnlLosses)},
+		{"treasuryProfit", fmt.Sprint(treasuryProfit)},
+		{"vaultProfit", fmt.Sprint(vaultProfit)},
+		{"stakeProfit", fmt.Sprint(stakeProfit)},
+		{"liquidityProfit", fmt.Sprint(liquidityProfit)},
+	}))
 	// now need to process the orders
-// 	ID:                      1d220d57-2864-4d2c-9631-8811d01714ea
-// UserID:                  1d2664a39eee6098
-// Order Type:              long
-// Leverage:                5.00
-// Pair ID:                 e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
-// Order Status:            unsigned
-// Collateral:              1000.00
-// Entry Price:             50000.00
-// Liquidation Price:       40000.00
-// Limit Order Price:       150000.00
-// Max Price:               10000.00
-// Max Value:               0.00
-// Stop Loss Price:         0.00
-// Take Profit Price:       52000.00
-// Take Profit Value:       2600.00
-// Take Profit Collateral:  500.00
-// Created At:              2025-01-26T06:36:44.080027
-// Signed At:               
-// Started At:              
-// Ended At:       
+	// 	ID:                      1d220d57-2864-4d2c-9631-8811d01714ea
+	// UserID:                  1d2664a39eee6098
+	// Order Type:              long
+	// Leverage:                5.00
+	// Pair ID:                 e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
+	// Order Status:            unsigned
+	// Collateral:              1000.00
+	// Entry Price:             50000.00
+	// Liquidation Price:       40000.00
+	// Limit Order Price:       150000.00
+	// Max Price:               10000.00
+	// Max Value:               0.00
+	// Stop Loss Price:         0.00
+	// Take Profit Price:       52000.00
+	// Take Profit Value:       2600.00
+	// Take Profit Collateral:  500.00
+	// Created At:              2025-01-26T06:36:44.080027
+	// Signed At:
+	// Started At:
+	// Ended At:
 
+	// 2025-01-26 01:47:29 [warning] price map: map[
+	// e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43:[104655.67 104655.75]
+	// ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace:[3300.2849714999998 3300.2776952599997]]
+	// ID:                      706b3244-78f1-409a-a0da-c345e4dcbce3
+	// UserID:                  1d2664a39eee6098
+	// Order Type:              short
+	// Leverage:                3.00
+	// Pair ID:                 e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
+	// Order Status:            unsigned
+	// Collateral:              2000.00
+	// Entry Price:             50000.00
+	// Liquidation Price:       66666.67
+	// Limit Order Price:       -116666.67
+	// Max Price:               20000.00
+	// Max Value:               0.00
+	// Stop Loss Price:         0.00
+	// Take Profit Price:       0.00
+	// Take Profit Value:       0.00
+	// Take Profit Collateral:  0.00
+	// Created At:              2025-01-26T06:36:44.080027
+	// Signed At:
+	// Started At:
+	// Ended At:
 
-
-
-// 2025-01-26 01:47:29 [warning] price map: map[
-// e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43:[104655.67 104655.75] 
-// ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace:[3300.2849714999998 3300.2776952599997]]
-// ID:                      706b3244-78f1-409a-a0da-c345e4dcbce3
-// UserID:                  1d2664a39eee6098
-// Order Type:              short
-// Leverage:                3.00
-// Pair ID:                 e62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
-// Order Status:            unsigned
-// Collateral:              2000.00
-// Entry Price:             50000.00
-// Liquidation Price:       66666.67
-// Limit Order Price:       -116666.67
-// Max Price:               20000.00
-// Max Value:               0.00
-// Stop Loss Price:         0.00
-// Take Profit Price:       0.00
-// Take Profit Value:       0.00
-// Take Profit Collateral:  0.00
-// Created At:              2025-01-26T06:36:44.080027
-// Signed At:               
-// Started At:              
-// Ended At:   
-
-// we now need to form our group merge orders and users
-//if orders2.id = 706b3244-78f1-409a-a0da-c345e4dcbce3
+	// we now need to form our group merge orders and users
+	//if orders2.id = 706b3244-78f1-409a-a0da-c345e4dcbce3
 
 }
 
 func processPrices(supabaseClient *supabase.Client, priceMap map[string][]float64) {
 
 	// Process the collected prices every 5 seconds
-	var minPrice, maxPrice float64
-	minPrice = 2000000 // set to a large enough value to cover all subvalues
 	for id, prices := range priceMap {
+		var minPrice, maxPrice float64
+		minPrice = 2000000 // set to a large enough value to cover all subvalues
 		if len(prices) == 0 {
 			continue
 		}

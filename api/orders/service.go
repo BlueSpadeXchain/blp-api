@@ -143,8 +143,7 @@ func GetOrderByIdRequest(r *http.Request, supabaseClient *supabase.Client, param
 	return order, nil
 }
 
-// we need to sign with something that makes this specific tx unique
-// for now we will just have the user sign of tx
+// deprecated
 func SignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedOrderRequestParams) (interface{}, error) {
 	var params *SignedOrderRequestParams
 
@@ -294,8 +293,6 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 	var params *CreateOrderRequestParams
 	var markPrice, entryPrice, limitPrice, stopLossPrice, tpPrice, tpValue, tpCollateral, maxProfitPrice, liqPrice float64 // init as zero
 
-	fmt.Print("\n I got this far")
-
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
@@ -307,7 +304,6 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 			return nil, utils.ErrInternal(fmt.Sprintf("failed to parse params: %s", err.Error()))
 		}
 	}
-
 	userData, err := user.GetUserByUserIdRequest(r, supabaseClient, &user.GetUserByUserIdRequestParams{
 		UserId: params.UserId,
 	})
@@ -315,24 +311,20 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		logrus.Error("GetUserByIdRequest error:", err.Error())
 		return nil, utils.ErrInternal(fmt.Sprintf("GetUserByIdRequest error: %v", err.Error()))
 	}
-
 	collateral, err := strconv.ParseFloat(params.Collateral, 64)
 	if err != nil {
 		return nil, fmt.Errorf("invalid collateral value: %w", err)
 	}
-
 	pair, err := getPair(params.Pair)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
-
 	priceData, err := GetCurrentPriceData(pair)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
 	markPrice, _ = strconv.ParseFloat(priceData.Price.Price, 64)
 	exponent := priceData.Price.Expo
-
 	if exponent < 0 {
 		for i := int64(0); i < -int64(exponent); i++ {
 			markPrice /= 10
@@ -342,8 +334,9 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 			markPrice *= 10
 		}
 	}
-
+	fmt.Printf("\n mark priceL: %v", markPrice)
 	// skip mark price evaluation, if limit order
+	fmt.Print("\n got here")
 	if params.LimitPrice == "" && params.EntryPrice != "" {
 		var err error
 		entryPrice, err = strconv.ParseFloat(params.EntryPrice, 64)
@@ -376,6 +369,7 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 	} else {
 		entryPrice = markPrice
 	}
+	fmt.Print("\n got here")
 
 	// limit price
 	if params.LimitPrice != "" && params.LimitPrice != "0" {
@@ -386,16 +380,19 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		}
 		markPrice = limitPrice
 	}
+	fmt.Print("\n got here0")
 
 	balance := userData.(*db.UserResponse).Balance
 	if balance < collateral {
 		return nil, utils.ErrInternal(fmt.Sprintf("user %v insufficent balance: expected >=%v, found %v", params.UserId, params.Collateral, balance))
 	}
+	fmt.Print("\n got here1")
 
 	leverage, err := strconv.ParseFloat(params.Leverage, 64)
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid leverage value: %v", err.Error()))
 	}
+	fmt.Print("\n got here")
 
 	// Calculate liquidation price
 	switch params.PositionType {
@@ -406,8 +403,9 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		liqPrice = markPrice * (1 + (1 / leverage))
 		maxProfitPrice = markPrice * (1 - 10/leverage)
 	default:
-		return nil, utils.ErrInternal(fmt.Sprintf("invalid position type: %s", params.PositionType))
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid position type: %v", params.PositionType))
 	}
+	fmt.Print("\n got here 45678")
 
 	if liqPrice <= 0 {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid liquidation price calculated %v", liqPrice))
@@ -450,6 +448,7 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		}
 
 	}
+	fmt.Print("\n got here8")
 
 	if params.TakeProfitPrice != "" && params.TakeProfitPrice != "0" {
 
@@ -459,7 +458,7 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		}
 		tpPrice = tpPrice_
 		if tpPrice <= 0 {
-			return nil, utils.ErrInternal(fmt.Sprintf("invalid take profit price"))
+			return nil, utils.ErrInternal(utils.ErrInternal("invalid take profit price").Error())
 		}
 		tpPercent, err := strconv.ParseFloat(params.TakeProfitPercent, 64)
 		if err != nil {
@@ -495,6 +494,7 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		}
 
 	}
+	fmt.Print("\n got here7")
 
 	response, err := db.CreateOrder2(
 		supabaseClient,
@@ -529,6 +529,120 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		Order: response.Order,
 		Hash:  hex.EncodeToString(orderIdHash),
 	}, nil
+}
+
+func SignOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedOrderRequestParams) (interface{}, error) {
+	var params *SignedOrderRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &SignedOrderRequestParams{}
+	}
+
+	if r != nil {
+		if err := utils.ParseAndValidateParams(r, &params); err != nil {
+			utils.LogError("failed to parse params", err.Error())
+			return nil, utils.ErrInternal(err.Error())
+		}
+	}
+
+	// the user
+	order, err := db.GetOrderById(supabaseClient, params.OrderId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+
+	// fmt.Printf("\n order id: %v", response.ID)
+	// orderIdBytes := []byte(response.ID)
+	// orderIdHash := crypto.Keccak256(orderIdBytes)
+
+	// return UnsignedOrderRequestResponse{
+	// 	Order: *response,
+	// 	Hash:  hex.EncodeToString(orderIdHash),
+	// }, nil
+
+	// orderIdBytesTest := []byte("ae96c97c-4e0d-4b13-bae6-54efffc72859")
+	// orderIdHashTest := crypto.Keccak256(orderIdBytesTest)
+	// fmt.Printf("\n generated from input: %v", hex.EncodeToString(orderIdHashTest))
+	// fmt.Printf("\n generated from api:   %v", "8cebec0419712a2ed98cb3ddd8aec8e92cc71f1677af693cfb99732e287d5902")
+	// tempr, _ := hex.DecodeString("2fbf4a2ac97a29b60e3b56bc6392805e2a398ade1d9a31e1a80961347764a49f")
+	// temps, _ := hex.DecodeString("6a9c55b2242e00d371169cb650c89130eb58a81b352bd1146735ae7557488e48")
+	// tempv, _ := hex.DecodeString("00")
+	// signatureBytesTest := append(tempr, temps...)
+	// signatureBytesTest = append(signatureBytesTest, tempv...)
+	// if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHashTest, signatureBytesTest, common.HexToAddress("0xaf73d6bc4017518f45106c4eeb896204b99fd0e9")); !ok || err != nil {
+	// 	if err != nil {
+	// 		utils.LogError("error validating signature", err.Error())
+	// 		return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+	// 	} else {
+	// 		utils.LogError("signature validation failed", "invaid signature")
+	// 		return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+	// 	}
+	// }
+	// fmt.Print("\n concluded test")
+
+	orderIdBytes := []byte(params.OrderId)
+	orderIdHash := crypto.Keccak256(orderIdBytes)
+
+	signatureV, err := strconv.ParseUint(params.V, 16, 64) // the value from raw metamask is messed up
+	if err != nil {
+		err_ := utils.ErrInternal(fmt.Sprintf("invalid v value: %v", err.Error()))
+		utils.ErrInternal(err.Error())
+		utils.LogError(err_.Message, err_.Details)
+		return nil, err_
+	}
+
+	signatureR, err := hex.DecodeString(params.R)
+	if err != nil {
+		utils.LogError("invalid sig-s value", err.Error())
+		err_ := utils.ErrInternal(fmt.Sprintf("invalid sig-r value: %v", err.Error()))
+		utils.ErrInternal(err.Error())
+		utils.LogError(err_.Message, err_.Details)
+		return nil, err_
+	}
+
+	signatureS, err := hex.DecodeString(params.S)
+	if err != nil {
+		utils.LogError("invalid sig-s value", err.Error())
+		err_ := utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", err.Error()))
+		utils.ErrInternal(err.Error())
+		utils.LogError(err_.Message, err_.Details)
+		return nil, err_
+	}
+
+	if signatureV >= 27 {
+		signatureV -= 27
+	}
+
+	signatureBytes := append(signatureR, signatureS...)
+	signatureBytes = append(signatureBytes, byte(signatureV))
+
+	utils.LogInfo("Signature details", utils.FormatKeyValueLogs([][2]string{
+		{"address", order.User.WalletAddress},
+		{"hash", hex.EncodeToString(orderIdHash)},
+		{"signature", hex.EncodeToString(signatureBytes)},
+		{"module", "signature-validation"},
+	}))
+
+	// if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHash, signatureBytes, common.HexToAddress("0x"+order.User.WalletAddress)); !ok || err != nil {
+	// 	if err != nil {
+	// 		utils.LogError("error validating signature", err.Error())
+	// 		return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+	// 	} else {
+	// 		utils.LogError("signature validation failed", "invaid signature")
+	// 		return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+	// 	}
+	// }
+
+	orderResponse, err := db.SignOrder2(supabaseClient, params.OrderId)
+	if err != nil {
+		err_ := utils.ErrInternal(err.Error())
+		utils.LogError(err_.Message, err_.Details)
+		return nil, err_
+	}
+
+	return orderResponse.Order, nil
 }
 
 func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedOrderRequestParams) (interface{}, error) {

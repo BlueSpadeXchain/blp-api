@@ -82,6 +82,37 @@ func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) 
 	return &order, nil
 }
 
+func SignOrder2(client *supabase.Client, orderId string) (*SignOrderResponse, error) {
+	_, err := uuid.Parse(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID format: %v", err)
+	}
+
+	params := map[string]interface{}{
+		"order_id": orderId,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("sign_order2", "estimate", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute create_order")
+	}
+
+	var order SignOrderResponse
+	if err := json.Unmarshal([]byte(response), &order); err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
 func CreateOrder2(
 	client *supabase.Client,
 	userId, orderType, pair string,

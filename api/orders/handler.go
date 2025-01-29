@@ -9,7 +9,6 @@ import (
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -61,11 +60,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "create-order": // returns order with uuid + hash to sign
-			response, err = UnsignedOrderRequest(r, supabaseClient)
+			response, err = CreateOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "sign-order":
-			response, err = CreateOrderRequest(r, supabaseClient)
+			response, err = SignOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "get-order-by-id":
@@ -124,13 +123,12 @@ func HandleResponse(w http.ResponseWriter, r *http.Request, supabaseClient *supa
 			utils.LogError("Failed to log error", logErr.Error())
 		}
 
-		logrus.Error(err.Error())
-
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)
 		return
 	}
 
+	utils.LogInfo("response", fmt.Sprint(response))
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

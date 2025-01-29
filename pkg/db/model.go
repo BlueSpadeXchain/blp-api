@@ -93,6 +93,10 @@ type UnsignedCreateOrderResponse struct {
 	ExpiryTime    string         `json:"expiry_time"`
 }
 
+type SignOrderResponse struct {
+	Order OrderResponse2 `json:"order"`
+}
+
 type UnsignedCloseOrderResponse struct {
 	OrderId       string `json:"order_id"`
 	SignatureId   string `json:"signature_id"`

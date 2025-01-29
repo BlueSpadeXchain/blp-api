@@ -4,19 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/BlueSpadeXchain/blp-api/rebalancer/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
-
-func FormatKeyValueLogs(data [][2]string) string {
-	var builder strings.Builder
-	builder.Grow(len(data) * 10)
-
-	for _, entry := range data {
-		builder.WriteString(fmt.Sprintf("  %s: %s\n", entry[0], entry[1]))
-	}
-
-	return builder.String()
-}
 
 func LogInfo(title string, message string) {
 	if logrus.GetLevel() < logrus.InfoLevel {
@@ -53,7 +43,7 @@ func LogSupabaseError(message SupabaseError) {
 	logrus.Error(fmt.Sprintf(
 		"\033[1m%s\033[0m:\n%s",
 		"Supabase response error",
-		FormatKeyValueLogs([][2]string{
+		utils.FormatKeyValueLogs([][2]string{
 			{"Code", message.Code},
 			{"Details", message.Details},
 			{"Hint", message.Hint},
