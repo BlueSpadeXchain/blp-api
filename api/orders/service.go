@@ -675,7 +675,7 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 		return nil, fmt.Errorf("invalid collateral value: %w", err)
 	}
 
-	pair, err := getPair(params.Pair)
+	pair, err := getPairId(params.Pair)
 	if err != nil {
 		return nil, err
 	}
