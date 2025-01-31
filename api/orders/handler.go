@@ -12,14 +12,6 @@ import (
 	"github.com/supabase-community/supabase-go"
 )
 
-// user sends signed request
-// request is validated and then added to queue
-// we have order requests and close requests only
-
-// if price is A -> B
-// / user makes order for 100 USD and liquidation at 150 usd or 50 usd
-// then the price gets to 80 usd, how much money does his have, and how much money does he need to add to stablize his position
-// remember this is in the context of I can only add/remove via another order request, or close
 func Handler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -71,14 +63,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetOrderByIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "get-order-by-id-old": // deprecated
-			response, err = GetOrderByIdRequest_old(r, supabaseClient)
-			HandleResponse(w, r, supabaseClient, response, err)
-			return
-		case "get-orders-by-user-id-old": // deprecated
-			response, err = GetOrdersByUserIdRequest_old(r, supabaseClient)
-			HandleResponse(w, r, supabaseClient, response, err)
-			return
 		case "get-orders-by-user-id":
 			response, err = GetOrdersByUserIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
@@ -107,6 +91,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = SignedCancelOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		// case "get-order-by-id-old": // deprecated
+		// 	response, err = GetOrderByIdRequest_old(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
+		// case "get-orders-by-user-id-old": // deprecated
+		// 	response, err = GetOrdersByUserIdRequest_old(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))

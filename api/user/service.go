@@ -125,7 +125,7 @@ func GetDepositsByUserAddressRequest(r *http.Request, supabaseClient *supabase.C
 		}
 	}
 
-	deposits, err := db.GetOrdersByUserAddress(supabaseClient, params.WalletAddress, params.WalletType)
+	deposits, err := db.GetDepositsByUserAddress(supabaseClient, params.WalletAddress, params.WalletType)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}

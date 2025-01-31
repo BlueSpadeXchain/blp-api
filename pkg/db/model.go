@@ -15,20 +15,6 @@ type UserResponse struct {
 }
 
 type OrderResponse struct {
-	ID         string  `json:"id"`
-	UserID     string  `json:"userid"`
-	OrderType  string  `json:"order_type"`
-	Leverage   float64 `json:"leverage"`
-	PairId     string  `json:"pair"`
-	Status     string  `json:"status"`
-	EntryPrice float64 `json:"entry_price"`
-	LiqPrice   float64 `json:"liq_price"`
-	CreatedAt  string  `json:"created_at"`
-	EndedAt    string  `json:"ended_at"`
-	Collateral float64 `json:"collateral"`
-}
-
-type OrderResponse2 struct {
 	ID                   string  `json:"id"`
 	UserID               string  `json:"userid"`
 	OrderType            string  `json:"order_type"`
@@ -57,11 +43,6 @@ type OrderAndUserResponse struct {
 	User  UserResponse  `json:"user"`
 }
 
-type OrderAndUserResponse2 struct {
-	Order OrderResponse2 `json:"order"`
-	User  UserResponse   `json:"user"`
-}
-
 type DepositResponse struct {
 	ID            string  `json:"id"`
 	UserID        string  `json:"userid"`
@@ -87,14 +68,14 @@ type SupabaseError struct {
 }
 
 type UnsignedCreateOrderResponse struct {
-	Order         OrderResponse2 `json:"order"`
-	SignatureId   string         `json:"signature_id"`
-	SignatureHash string         `json:"signature_hash"`
-	ExpiryTime    string         `json:"expiry_time"`
+	Order         OrderResponse `json:"order"`
+	SignatureId   string        `json:"signature_id"`
+	SignatureHash string        `json:"signature_hash"`
+	ExpiryTime    string        `json:"expiry_time"`
 }
 
 type SignOrderResponse struct {
-	Order OrderResponse2 `json:"order"`
+	Order OrderResponse `json:"order"`
 }
 
 type UnsignedCloseOrderResponse struct {
@@ -112,15 +93,15 @@ type UnsignedCancelOrderResponse struct {
 }
 
 type SignedCancelOrderResponse struct {
-	Order        OrderResponse2 `json:"order"`
-	IsValid      bool           `json:"is_valid"`
-	ErrorMessage string         `json:"error_message"`
+	Order        OrderResponse `json:"order"`
+	IsValid      bool          `json:"is_valid"`
+	ErrorMessage string        `json:"error_message"`
 }
 
 type SignedCloseOrderResponse struct {
-	Order        OrderResponse2 `json:"order"`
-	IsValid      bool           `json:"is_valid"`
-	ErrorMessage string         `json:"error_message"`
+	Order        OrderResponse `json:"order"`
+	IsValid      bool          `json:"is_valid"`
+	ErrorMessage string        `json:"error_message"`
 }
 
 type GetSignatureValidationHashResponse struct {

@@ -109,39 +109,6 @@ func LogCreateOrderResponse(url string, response db.OrderResponse) {
 	}
 
 	message := fmt.Sprintf(
-		"Request: \033[1m%s\033[0m\n"+
-			"ID: %s\n"+
-			"UserID: %s\n"+
-			"OrderType: %s\n"+
-			"Leverage: %.2f\n"+
-			"Status: %s\n"+
-			"EntryPrice: %.2f\n"+
-			"LiqPrice: %.2f\n"+
-			"Collateral: %.2f\n"+
-			"CreatedAt: %s\n"+
-			"EndedAt: %s\n",
-		url,
-		response.ID,
-		response.UserID,
-		response.OrderType,
-		response.Leverage,
-		response.Status,
-		response.EntryPrice,
-		response.LiqPrice,
-		response.Collateral,
-		response.CreatedAt,
-		response.EndedAt,
-	)
-
-	logrus.Info(message)
-}
-
-func LogCreateOrderResponse2(url string, response db.OrderResponse2) {
-	if logrus.GetLevel() < logrus.InfoLevel {
-		return
-	}
-
-	message := fmt.Sprintf(
 		"Order Returned: \033[1m%s\033[0m\n"+
 			"ID:                      %s\n"+
 			"UserID:                  %s\n"+

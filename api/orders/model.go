@@ -45,11 +45,6 @@ type UnsignedOrderRequestResponse struct {
 	Hash  string           `json:"hash"`  // Hash in hex to be signed by the user
 }
 
-type UnsignedOrderRequestResponse2 struct {
-	Order db.OrderResponse2 `json:"order"` // created unsigned position, so it has no affect on balances
-	Hash  string            `json:"hash"`  // Hash in hex to be signed by the user
-}
-
 type BinaryData struct {
 	Encoding string   `json:"encoding"`
 	Data     []string `json:"data"`
