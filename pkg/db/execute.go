@@ -115,14 +115,15 @@ func SignOrder2(client *supabase.Client, orderId string) (*SignOrderResponse, er
 
 func CreateOrder2(
 	client *supabase.Client,
-	userId, orderType, pair string,
+	userId, orderType, pair, pairId string,
 	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitValue, takeProfitCollateral float64) (*UnsignedCreateOrderResponse, error) {
 	// Convert chainID, block, and depositNonce to string for TEXT type in the database
 	params := map[string]interface{}{
 		"user_id":     userId,
 		"order_type":  orderType,
 		"leverage":    leverage,
-		"pair_id":     pair,
+		"pair":        pair,
+		"pair_id":     pairId,
 		"collateral":  collateral,
 		"entry_price": entryPrice,
 		"liq_price":   liquidationPrice,

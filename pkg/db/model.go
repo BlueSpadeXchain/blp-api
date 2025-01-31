@@ -29,11 +29,11 @@ type OrderResponse struct {
 }
 
 type OrderResponse2 struct {
-	// Pair                  string  `json:"pair"`
 	ID                   string  `json:"id"`
 	UserID               string  `json:"userid"`
 	OrderType            string  `json:"order_type"`
 	Leverage             float64 `json:"leverage"`
+	Pair                 string  `json:"pair"`
 	PairId               string  `json:"pair_id"`
 	OrderStatus          string  `json:"status"`
 	Collateral           float64 `json:"collateral"`

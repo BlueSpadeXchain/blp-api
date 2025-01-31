@@ -272,6 +272,11 @@ func Uint256ToBytes(value *big.Int) []byte {
 	return bytes
 }
 
+func HashToEthHash(hash []byte) []byte {
+	ethHash := append(EthDomainHeader, hash...)
+	return crypto.Keccak256(ethHash)
+}
+
 // remember to -= 27 for ethereum signatures
 func ValidateEvmEcdsaSignature(hash []byte, signature []byte, address common.Address) (bool, error) {
 	if len(signature) != 65 {

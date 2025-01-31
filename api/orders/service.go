@@ -13,6 +13,7 @@ import (
 	user "github.com/BlueSpadeXchain/blp-api/api/user"
 	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
@@ -315,11 +316,11 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 	if err != nil {
 		return nil, fmt.Errorf("invalid collateral value: %w", err)
 	}
-	pair, err := getPair(params.Pair)
+	pairId, err := getPairId(params.Pair)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
-	priceData, err := GetCurrentPriceData(pair)
+	priceData, err := GetCurrentPriceData(pairId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
@@ -500,7 +501,8 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		supabaseClient,
 		params.UserId,
 		params.PositionType,
-		pair,
+		pairId,
+		params.Pair,
 		leverage,
 		collateral,
 		entryPrice,
@@ -625,15 +627,15 @@ func SignOrderRequest(r *http.Request, supabaseClient *supabase.Client, paramete
 		{"module", "signature-validation"},
 	}))
 
-	// if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHash, signatureBytes, common.HexToAddress("0x"+order.User.WalletAddress)); !ok || err != nil {
-	// 	if err != nil {
-	// 		utils.LogError("error validating signature", err.Error())
-	// 		return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
-	// 	} else {
-	// 		utils.LogError("signature validation failed", "invaid signature")
-	// 		return nil, utils.ErrInternal("Signature validation failed: invalid signature")
-	// 	}
-	// }
+	if ok, err := utils.ValidateEvmEcdsaSignature(orderIdHash, signatureBytes, common.HexToAddress("0x"+order.User.WalletAddress)); !ok || err != nil {
+		if err != nil {
+			utils.LogError("error validating signature", err.Error())
+			// return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+		} else {
+			utils.LogError("signature validation failed", "invaid signature")
+			// return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+		}
+	}
 
 	orderResponse, err := db.SignOrder2(supabaseClient, params.OrderId)
 	if err != nil {
