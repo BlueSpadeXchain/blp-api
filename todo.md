@@ -84,7 +84,7 @@ protocol orders take priority
 - [ ] api documentation
 - [ ] readme sysdoc
 - [ ] order queue
-- [ ] loadbalancer
+- [x] loadbalancer
 - [ ] ts example script
 - [x] poke test db cron job
 - [ ] withdrawls
@@ -104,6 +104,8 @@ protocol orders take priority
 - [ ] read replicas for all get calls (especially for rebalancer)
 - [ ] stop loss price, has no indication of value, this should be precalculated
 - [ ] handleResponse needs to be revisioned to use utils.Error instead of error
+- [ ] change fee to be based off of leverage, instead of collateral
+- [ ] add minimumum order side of 10 usd
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

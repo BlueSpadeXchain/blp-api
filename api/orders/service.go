@@ -127,7 +127,7 @@ func GetCurrentPriceData(pair string) (PriceUpdate, error) {
 	return response.Parsed[0], nil
 }
 
-func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*CreateOrderRequestParams) (interface{}, error) {
+func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*CreateOrderRequestParams) (interface{}, error) {
 	var params *CreateOrderRequestParams
 	var markPrice, entryPrice, limitPrice, stopLossPrice, tpPrice, tpValue, tpCollateral, maxProfitPrice, liqPrice float64 // init as zero
 
@@ -338,8 +338,8 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		supabaseClient,
 		params.UserId,
 		params.PositionType,
-		pairId,
 		params.Pair,
+		pairId,
 		leverage,
 		collateral,
 		entryPrice,
@@ -370,7 +370,7 @@ func CreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parame
 	}, nil
 }
 
-func SignOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedOrderRequestParams) (interface{}, error) {
+func SignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedOrderRequestParams) (interface{}, error) {
 	var params *SignedOrderRequestParams
 
 	if len(parameters) > 0 {
@@ -753,6 +753,8 @@ func SignedCancelOrderRequest(r *http.Request, supabaseClient *supabase.Client, 
 		return nil, utils.ErrInternal(err.Error())
 	}
 	if !cancelResponse.IsValid {
+		utils.LogError("sign cancel order error", err.Error())
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", err.Error()))
 		return nil, utils.ErrInternal(cancelResponse.ErrorMessage)
 	}
 	return cancelResponse, nil

@@ -52,11 +52,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "create-order": // returns order with uuid + hash to sign
-			response, err = CreateOrderRequest(r, supabaseClient)
+			response, err = UnsignedCreateOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "sign-order":
-			response, err = SignOrderRequest(r, supabaseClient)
+			response, err = SignedCreateOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "get-order-by-id":
@@ -71,7 +71,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetOrdersByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "get-orders":
+		case "get-order":
 			response, err = GetOrderByIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
@@ -88,6 +88,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "sign-cancel-order":
+			response, err = SignedCancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "modify-order":
+			response, err = UnsignedCancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "sign-modify-order":
 			response, err = SignedCancelOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
