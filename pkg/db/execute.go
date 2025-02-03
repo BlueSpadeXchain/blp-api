@@ -311,7 +311,7 @@ func SignCancelOrder(client *supabase.Client, orderId, signatureId string) (*Sig
 	}
 
 	// Execute the RPC call
-	response := client.Rpc("signed_close_order", "exact", params)
+	response := client.Rpc("signed_cancel_order", "exact", params)
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError

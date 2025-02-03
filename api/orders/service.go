@@ -754,8 +754,7 @@ func SignedCancelOrderRequest(r *http.Request, supabaseClient *supabase.Client, 
 	}
 	if !cancelResponse.IsValid {
 		utils.LogError("sign cancel order error", err.Error())
-		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", err.Error()))
-		return nil, utils.ErrInternal(cancelResponse.ErrorMessage)
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", cancelResponse.ErrorMessage))
 	}
 	return cancelResponse, nil
 }
