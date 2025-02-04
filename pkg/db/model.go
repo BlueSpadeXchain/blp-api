@@ -24,6 +24,7 @@ type OrderResponse struct {
 	OrderStatus          string  `json:"status"`
 	Collateral           float64 `json:"collateral"`
 	EntryPrice           float64 `json:"entry_price"`
+	ClosePrice           float64 `json:"close_price"`
 	LiquidationPrice     float64 `json:"liq_price"`
 	MaxPrice             float64 `json:"max_price"`
 	MaxValue             float64 `json:"max_value"`
@@ -35,7 +36,9 @@ type OrderResponse struct {
 	CreatedAt            string  `json:"created_at"`
 	SignedAt             string  `json:"signed_at"`
 	StartedAt            string  `json:"started_at"`
+	ModifiedAt           string  `json:"modified_at"`
 	EndedAt              string  `json:"ended_at"`
+	ProfitAndLoss        string  `json:"pnl"`
 }
 
 type OrderAndUserResponse struct {
