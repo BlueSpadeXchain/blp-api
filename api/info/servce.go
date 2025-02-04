@@ -17,3 +17,11 @@ func GetPairsRequest(r *http.Request, parameters ...interface{}) (interface{}, e
 		Pairs: Pairs,
 	}, nil
 }
+
+func GetPairsAndIdsRequest(r *http.Request, parameters ...interface{}) (interface{}, error) {
+	return &PairAndIds, nil
+}
+
+func GetPairIdsRequest(r *http.Request, parameters ...interface{}) (interface{}, error) {
+	return &Pairs, nil
+}

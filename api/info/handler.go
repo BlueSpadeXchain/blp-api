@@ -55,6 +55,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetPairsRequest(r)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "get-pairs-and-ids":
+			response, err = GetPairsAndIdsRequest(r)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))
