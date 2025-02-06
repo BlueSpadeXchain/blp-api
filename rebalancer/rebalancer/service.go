@@ -21,137 +21,266 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 	if err != nil {
 		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
 	}
-	_, _, err = supabaseClient.
-		From("users").
-		Update(map[string]interface{}{
-			// Use PostgreSQL's additive syntax for updates
-			"treasuryProfit":  supabase.Client..Raw("treasuryProfit + ?", userUpdate.TreasuryProfit),
-			"vaultProfit":     supabase.Raw("vaultProfit + ?", userUpdate.VaultProfit),
-			"stakeProfit":     supabase.Raw("stakeProfit + ?", userUpdate.StakeProfit),
-			"liquidityProfit": supabase.Raw("liquidityProfit + ?", userUpdate.LiquidityProfit),
-			"pnl":             supabase.Raw("pnl + ?", userUpdate.PnL), // Assuming PnL is additive too
-		}).
-		Eq("id", userID).
-		Execute()
 
-	if err != nil {
-		logrus.Errorf("Failed to update user %s: %v", userID, err)
-	}
+	// type OrderGlobalUpdate struct {
+	// 	CurrentBorrowed       float64 `json:"current_borrowed"`
+	// 	CurrentLiquidity      float64 `json:"current_liquidity"`
+	// 	CurrentOrdersActive   float64 `json:"current_orders_active"`
+	// 	CurrentOrdersLimit    float64 `json:"current_orders_limit"`
+	// 	CurrentOrdersPending  float64 `json:"current_orders_pending"`
+	// 	TotalBorrowed         float64 `json:"total_borrowed"`
+	// 	TotalLiquidations     float64 `json:"total_liquidations"`
+	// 	TotalOrdersActive     float64 `json:"total_orders_active"`
+	// 	TotalOrdersFilled     float64 `json:"total_orders_filled"`
+	// 	TotalOrdersLimit      float64 `json:"total_orders_limit"`
+	// 	TotalOrdersLiquidated float64 `json:"total_orders_liquidated"`
+	// 	TotalOrdersStopped    float64 `json:"total_orders_stopped"`
+	// 	TotalPnlLosses        float64 `json:"total_pnl_losses"`
+	// 	TotalPnlProfits       float64 `json:"total_pnl_profits"`
+	// 	TotalRevenue          float64 `json:"total_revenue"`
+	// 	TreasuryBalance       float64 `json:"treasury_balance"`
+	// 	TotalTreasuryProfits  float64 `json:"total_treasury_profits"`
+	// 	VaultBalance          float64 `json:"vault_balance"`
+	// 	TotalVaultProfits     float64 `json:"total_vault_profits"`
+	// 	TotalLiquidityRewards float64 `json:"total_liquidity_rewards"`
+	// 	TotalStakeRewards     float64 `json:"total_stake_rewards"`
+	// }
+	//----------------------------------------------------------------
 	// we should be tracking tpTriggered
-	var ordersActivated, ordersFilled, ordersLiquidated, ordersStopped float64
-	var pnlProfits, pnlLosses, treasuryProfit, vaultProfit, stakeProfit, liquidityProfit, currentOrdersLimit, currentOrdersPending float64
-	// var openFees, closeFees float64
+	// var ordersActivated, ordersFilled, ordersLiquidated, ordersStopped float64
+	// var pnlProfits, pnlLosses, treasuryProfit, vaultProfit, stakeProfit, liquidityProfit, currentOrdersLimit, currentOrdersPending float64
+	orderUpdates_ := []db.OrderUpdate{}
+	OrderGlobalUpdate_ := db.OrderGlobalUpdate{}
 	for _, order := range *orders {
-		LogCreateOrderResponse2(order)
-		// since the priceMap is sequenced in decending order, we can figure out which event was triggered first or multiple events were triggers
-
-		// need two degrees of triggers
-		// if limit is active -> if tp/stoploss -> if liq/max
-
-		// liq/max/stop -> end loop for order checking against prices
-		var payout float64   // init to 0
-		var newStatus string // status after all prices
-		var closeFee float64
-		var openFee float64
+		if order.OrderStatus == "unsigned" {
+			continue
+		}
+		LogCreateOrderResponse(order)
+		orderUpdate_ := db.OrderUpdate{}
+		orderUpdate_.OrderID = order.ID
+		orderUpdate_.UserID = order.UserID
+		var payout float64 // init to 0
+		// add utilitization fee to order liquidation
 		for _, markPrice := range priceMap {
 			var closeFee_ float64
-			// we set the take profit value to null when it is hit
-			// still need to calculate pnl
-			collateral_ := order.Collateral * 0.99975
-			if order.OrderType == "long" {
+			// assume the order collateral is the exact, fees are already taken
+			// collateral_ := order.Collateral * 0.99975
+			if order.OrderType == "long" && order.EndedAt.IsZero() {
 				if order.OrderStatus == "pending" {
 					// profits
 					if order.TakeProfitPrice <= markPrice && order.TakeProfitValue > 0 {
-						value := (collateral_ - order.TakeProfitCollateral) * order.Leverage * (1 + (order.TakeProfitPrice-markPrice)/markPrice)
-						closeFee_ = value * 0.00025 // 0.025% fee
-						payout += value - closeFee
-						pnlProfits += order.TakeProfitValue // for now pnl for tp can be payout
-						order.TakeProfitValue = 0           // should be null (need to figure out how set numeric back to null)
-						// status should remain 'pending'
 						logrus.Info("executed take profit")
-						ordersFilled += 1
+						value := order.TakeProfitCollateral * order.Leverage * (1 + (order.TakeProfitPrice-order.EntryPrice)/order.EntryPrice)
+						closeFee_ = order.TakeProfitCollateral * order.Leverage * 0.001 // 0.1% fee
+						payout += value - closeFee_
+						order.TakeProfitValue = 0 // reset tpValue, indication of tp fill
+						orderUpdate_.Status = "pending"
+						orderUpdate_.EntryPrice = order.EntryPrice
+						orderUpdate_.ClosePrice = 0
+						orderUpdate_.TpValue = 0
+						orderUpdate_.Pnl += payout
+
+						orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.TakeProfitCollateral * (order.Leverage - 1)
+						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
+						orderUpdate_.OrderGlobalUpdate.TotalPnlProfits += payout
+						orderUpdate_.OrderGlobalUpdate.TotalRevenue += closeFee_
+						orderUpdate_.OrderGlobalUpdate.TreasuryBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.VaultBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalVaultProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards += closeFee_ * 0.5
+						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
+
+						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
+							{"Id", fmt.Sprint(order.ID)},
+							{"closeFee", fmt.Sprint(closeFee_)},
+							{"old stats", fmt.Sprint(order.OrderStatus)},
+							{"new status", fmt.Sprint(orderUpdate_.Status)},
+						}))
 					}
 					if order.MaxPrice <= markPrice {
 						var value float64
+						var liquidityChange float64
 						if order.TakeProfitValue == 0 && order.TakeProfitCollateral != 0 {
 							logrus.Info("executed fill after take profit")
-							value = (collateral_ - order.TakeProfitCollateral) * order.Leverage * (1 + (order.MaxPrice-markPrice)/markPrice)
-						} else { // if there is no tp collateral (implying not set)
-							// still need to fix the max price, should have basis of collateral * 0.00025
+							value = (order.Collateral - order.TakeProfitCollateral) * order.Leverage * (1 + (order.MaxPrice-order.EntryPrice)/order.EntryPrice)
+							closeFee_ = (order.Collateral - order.TakeProfitCollateral) * order.Leverage * 0.001
+							liquidityChange = order.Collateral - order.TakeProfitCollateral
+							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= liquidityChange * (order.Leverage - 1)
+							orderUpdate_.TpValue = 0
+
+						} else { // if there is no tp collateral (implying not set) 10 @ 200x
 							logrus.Info("executed fill")
-							value = collateral_ * order.Leverage * (1 + (order.MaxPrice-markPrice)/markPrice)
+							value = order.Collateral * order.Leverage * (1 + (order.MaxPrice-order.EntryPrice)/order.EntryPrice)
+							closeFee_ = order.Collateral * order.Leverage * 0.001
+							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed = -order.Collateral * (order.Leverage - 1)
+							orderUpdate_.TpValue = order.TakeProfitValue
 						}
-						closeFee_ = value * 0.00025
-						closeFee += closeFee_
-						payout += value - closeFee
-						pnlProfits += value
-						newStatus = "filled"
-						ordersFilled += 1
-						currentOrdersPending -= 1
+
+						payout += value - closeFee_
+
+						orderUpdate_.Status = "filled"
+						orderUpdate_.EntryPrice = order.EntryPrice
+						orderUpdate_.ClosePrice = markPrice
+						orderUpdate_.Pnl += payout
+
+						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersPending = -1
+						orderUpdate_.OrderGlobalUpdate.TotalOrdersFilled = 1
+						orderUpdate_.OrderGlobalUpdate.TotalPnlProfits += payout
+						orderUpdate_.OrderGlobalUpdate.TotalRevenue += closeFee_
+						orderUpdate_.OrderGlobalUpdate.TreasuryBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.VaultBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalVaultProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards += closeFee_ * 0.5
+						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
 							{"Id", fmt.Sprint(order.ID)},
-							{"openFee", fmt.Sprint(openFee)},
-							{"closeFee", fmt.Sprint(closeFee)},
+							{"closeFee", fmt.Sprint(closeFee_)},
 							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(newStatus)},
+							{"new status", fmt.Sprint(orderUpdate_.Status)},
 						}))
 						break
 					}
-					// losses
-					//payoutValue = collateral * order_.Leverage * (1 + (markPrice-order_.EntryPrice)/order_.EntryPrice)
-					// we should have an auto stoploos (liquidation price) at 98.995%, todo (db)
+					// loss
 					if order.StopLossPrice >= markPrice && order.StopLossPrice > 0 {
-						logrus.Info("executed stop loss")
-						value := collateral_ * order.Leverage * (1 + (order.StopLossPrice-order.EntryPrice)/order.EntryPrice)
-						closeFee_ = value * 0.00025
-						closeFee += closeFee_
-						payout = value - closeFee_
-						pnlLosses += collateral_ - payout
-						newStatus = "stopped"
-						ordersStopped += 1
-						currentOrdersPending -= 1
+						var value float64
+						var liquidityChange float64
+						if order.TakeProfitValue == 0 && order.TakeProfitCollateral != 0 {
+							logrus.Info("executed stop loss after take profit")
+							value = (order.Collateral - order.TakeProfitCollateral) * (1 + order.Leverage*(order.StopLossPrice-order.EntryPrice)/order.EntryPrice)
+							closeFee_ = (order.Collateral - order.TakeProfitCollateral) * order.Leverage * 0.001
+							payout = value - closeFee_
+							liquidityChange = order.Collateral - order.TakeProfitCollateral
+							closeFee_ += liquidityChange - value
+							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= liquidityChange * (order.Leverage - 1)
+							orderUpdate_.TpValue = 0
+
+						} else { // if there is no tp collateral (implying not set)
+							logrus.Info("executed stop loss")
+							value = order.Collateral * (1 + order.Leverage*(order.StopLossPrice-order.EntryPrice)/order.EntryPrice)
+							closeFee_ = order.Collateral * order.Leverage * 0.001
+							payout = value - closeFee_
+							closeFee_ += order.Collateral - value
+							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.Collateral * (order.Leverage - 1)
+							orderUpdate_.TpValue = order.TakeProfitValue
+						}
+
+						orderUpdate_.Status = "stopped"
+						orderUpdate_.EntryPrice = order.EntryPrice
+						orderUpdate_.ClosePrice = markPrice
+						orderUpdate_.Pnl -= (liquidityChange - payout)
+
+						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersPending = -1
+						orderUpdate_.OrderGlobalUpdate.TotalOrdersStopped = 1
+						orderUpdate_.OrderGlobalUpdate.TotalPnlLosses -= (liquidityChange - payout)
+						orderUpdate_.OrderGlobalUpdate.TotalRevenue += closeFee_
+						orderUpdate_.OrderGlobalUpdate.TreasuryBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.VaultBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalVaultProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards += closeFee_ * 0.5
+						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
 							{"Id", fmt.Sprint(order.ID)},
-							{"openFee", fmt.Sprint(openFee)},
-							{"closeFee", fmt.Sprint(closeFee)},
+							{"closeFee", fmt.Sprint(closeFee_)},
 							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(newStatus)},
+							{"new status", fmt.Sprint(orderUpdate_.Status)},
 						}))
 						break
 					}
-					// if we does auto stop loss, orders will always have a positive value, but calc is an extra load on our system
+					// assume liquidations occur where value is non zero
 					if order.LiquidationPrice >= markPrice || markPrice <= 0 {
-						// markPrice <= 0 shouldn't be possible
-						logrus.Info("executed liquidation")
-						closeFee_ = collateral_ * 0.99 // openFee already applied
-						closeFee += closeFee_
-						pnlLosses += closeFee_ - collateral_
-						newStatus = "liquidated"
-						ordersLiquidated += 1
-						currentOrdersPending -= 1
+						var value float64
+						var liquidityChange float64
+						if order.TakeProfitValue == 0 && order.TakeProfitCollateral != 0 {
+							logrus.Info("executed liquidation after take profit")
+							value = (order.Collateral - order.TakeProfitCollateral) * (1 + order.Leverage*(order.LiquidationPrice-order.EntryPrice)/order.EntryPrice)
+							closeFee_ = (order.Collateral - order.TakeProfitCollateral) * order.Leverage * 0.001
+							payout = value - closeFee_
+							liquidityChange = order.Collateral - order.TakeProfitCollateral
+							closeFee_ += liquidityChange - value
+							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= liquidityChange * (order.Leverage - 1)
+							orderUpdate_.TpValue = 0
+
+						} else { // if there is no tp collateral (implying not set) 10 @ 200x
+							logrus.Info("executed liquidation")
+							value = order.Collateral * (1 + order.Leverage*(order.LiquidationPrice-order.EntryPrice)/order.EntryPrice)
+							closeFee_ = order.Collateral * order.Leverage * 0.001
+							payout = value - closeFee_
+							closeFee_ += order.Collateral - value
+							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.Collateral * (order.Leverage - 1)
+							orderUpdate_.TpValue = order.TakeProfitValue
+						}
+
+						orderUpdate_.Status = "liquidated"
+						orderUpdate_.EntryPrice = order.EntryPrice
+						orderUpdate_.ClosePrice = order.LiquidationPrice
+						orderUpdate_.Pnl -= (liquidityChange - payout)
+
+						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity = -order.TakeProfitCollateral
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersPending = -1
+						orderUpdate_.OrderGlobalUpdate.TotalOrdersLiquidated = 1
+						orderUpdate_.OrderGlobalUpdate.TotalPnlLosses -= (liquidityChange - payout)
+						orderUpdate_.OrderGlobalUpdate.TotalOrdersFilled = 1
+						orderUpdate_.OrderGlobalUpdate.TotalRevenue += closeFee_
+						orderUpdate_.OrderGlobalUpdate.TreasuryBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.VaultBalance += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalVaultProfits += closeFee_ * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards += closeFee_ * 0.5
+						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
 							{"Id", fmt.Sprint(order.ID)},
-							{"openFee", fmt.Sprint(openFee)},
-							{"closeFee", fmt.Sprint(closeFee)},
+							{"closeFee", fmt.Sprint(closeFee_)},
 							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(newStatus)},
+							{"new status", fmt.Sprint(orderUpdate_.Status)},
 						}))
 						break
 					}
 				} else if order.OrderStatus == "limit" { // assuming lim != 0, hope an intern doesn't break this
-					// trigger active, apply open fees, and set entryPrice to markPrice
 					if (order.LimitPrice > order.EntryPrice && markPrice >= order.LimitPrice) ||
 						(order.LimitPrice < order.EntryPrice && markPrice <= order.LimitPrice) {
 						logrus.Info("executed limit order")
-						openFee = collateral_ * 0.00025
-						order.EntryPrice = order.LimitPrice
-						ordersActivated += 1
-						currentOrdersLimit -= 1
-						currentOrdersPending += 1
-						newStatus = "pending"
+						openFee := order.Collateral * order.Leverage * 0.001
+
+						order.OrderStatus = "pending"
+						orderUpdate_.Status = "pending"
+						orderUpdate_.EntryPrice = order.LimitPrice
+						orderUpdate_.ClosePrice = 0
+						orderUpdate_.Pnl = 0
+						order.Collateral = order.Collateral - openFee
+						orderUpdate_.Collateral = order.Collateral - openFee
+
+						orderUpdate_.OrderGlobalUpdate.CurrentBorrowed += order.Collateral * (order.Leverage - 1)
+						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity += order.Collateral
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive += 1
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersPending += 1
+						orderUpdate_.OrderGlobalUpdate.CurrentOrdersLimit -= 1
+						orderUpdate_.OrderGlobalUpdate.TotalBorrowed += order.Collateral * (order.Leverage - 1)
+						orderUpdate_.OrderGlobalUpdate.TotalOrdersActive += 1
+						orderUpdate_.OrderGlobalUpdate.TotalRevenue += openFee
+						orderUpdate_.OrderGlobalUpdate.TreasuryBalance += openFee * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits += openFee * 0.1
+						orderUpdate_.OrderGlobalUpdate.VaultBalance += openFee * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalVaultProfits += openFee * 0.1
+						orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards += openFee * 0.5
+						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += openFee * 0.3
+
+						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
+							{"Id", fmt.Sprint(order.ID)},
+							{"openFee", fmt.Sprint(openFee)},
+							{"old stats", fmt.Sprint(order.OrderStatus)},
+							{"new status", fmt.Sprint(orderUpdate_.Status)},
+						}))
 					}
 				}
 			} else if order.OrderType == "short" {
@@ -162,57 +291,75 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 					if (order.LimitPrice > order.EntryPrice && markPrice >= order.LimitPrice) ||
 						(order.LimitPrice < order.EntryPrice && markPrice <= order.LimitPrice) {
 						logrus.Info("executed limit order")
-						openFee = collateral_ * 0.00025
 						order.EntryPrice = order.LimitPrice
-						ordersActivated += 1
-						currentOrdersLimit -= 1
-						currentOrdersPending += 1
-						newStatus = "pending"
+						// ordersActivated += 1
+						// currentOrdersLimit -= 1
+						// currentOrdersPending += 1
 					}
 				}
-
 			}
 
-			closeFee += closeFee_
-
-			utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-				{"Id", fmt.Sprint(order.ID)},
-				{"openFee", fmt.Sprint(openFee)},
-				{"closeFee", fmt.Sprint(closeFee)},
-				{"old stats", fmt.Sprint(order.OrderStatus)},
-				{"new status", fmt.Sprint(newStatus)},
-			}))
-
+			OrderGlobalUpdate_.CurrentBorrowed += orderUpdate_.OrderGlobalUpdate.CurrentBorrowed
+			OrderGlobalUpdate_.CurrentLiquidity += orderUpdate_.OrderGlobalUpdate.CurrentLiquidity
+			OrderGlobalUpdate_.CurrentOrdersActive += orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive
+			OrderGlobalUpdate_.CurrentOrdersLimit += orderUpdate_.OrderGlobalUpdate.CurrentOrdersLimit
+			OrderGlobalUpdate_.CurrentOrdersPending += orderUpdate_.OrderGlobalUpdate.CurrentOrdersPending
+			OrderGlobalUpdate_.TotalBorrowed += orderUpdate_.OrderGlobalUpdate.TotalBorrowed
+			OrderGlobalUpdate_.TotalLiquidations += orderUpdate_.OrderGlobalUpdate.TotalLiquidations
+			OrderGlobalUpdate_.TotalOrdersActive += orderUpdate_.OrderGlobalUpdate.TotalOrdersActive
+			OrderGlobalUpdate_.TotalOrdersFilled += orderUpdate_.OrderGlobalUpdate.TotalOrdersFilled
+			OrderGlobalUpdate_.TotalOrdersLimit += orderUpdate_.OrderGlobalUpdate.TotalOrdersLimit
+			OrderGlobalUpdate_.TotalOrdersLiquidated += orderUpdate_.OrderGlobalUpdate.TotalOrdersLiquidated
+			OrderGlobalUpdate_.TotalOrdersStopped += orderUpdate_.OrderGlobalUpdate.TotalOrdersStopped
+			OrderGlobalUpdate_.TotalPnlLosses += orderUpdate_.OrderGlobalUpdate.TotalPnlLosses
+			OrderGlobalUpdate_.TotalPnlProfits += orderUpdate_.OrderGlobalUpdate.TotalPnlProfits
+			OrderGlobalUpdate_.TotalRevenue += orderUpdate_.OrderGlobalUpdate.TotalRevenue
+			OrderGlobalUpdate_.TreasuryBalance += orderUpdate_.OrderGlobalUpdate.TreasuryBalance
+			OrderGlobalUpdate_.TotalTreasuryProfits += orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits
+			OrderGlobalUpdate_.VaultBalance += orderUpdate_.OrderGlobalUpdate.VaultBalance
+			OrderGlobalUpdate_.TotalVaultProfits += orderUpdate_.OrderGlobalUpdate.TotalVaultProfits
+			OrderGlobalUpdate_.TotalLiquidityRewards += orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards
+			OrderGlobalUpdate_.TotalStakeRewards += orderUpdate_.OrderGlobalUpdate.TotalStakeRewards
 		}
+
+		orderUpdates_ = append(orderUpdates_, orderUpdate_)
 
 		// we really need to test the interations over the table but for now just test end result
 		// LogProcessedOrderResult()
 		// need to increment: treasuryProfit, vaultProfit, stakeProfit, liquidityProfit
-		utils.LogInfo("Processed order result", utils.FormatKeyValueLogs([][2]string{
-			{"Id", fmt.Sprint(order.ID)},
-			{"Status", fmt.Sprint(newStatus)},
-			{"PnL", fmt.Sprint(payout)},            // pnl percent is redundant to rebalancer
-			{"treasuryProfit", fmt.Sprint(payout)}, // need to calc
-			{"vaultProfit", fmt.Sprint(payout)},
-			{"stakeProfit", fmt.Sprint(payout)},
-			{"liquidityProfit", fmt.Sprint(payout)},
-		}))
+		// utils.LogInfo("Processed order result", utils.FormatKeyValueLogs([][2]string{
+		// 	{"Id", fmt.Sprint(order.ID)},
+		// 	{"Status", fmt.Sprint(newStatus)},
+		// 	{"PnL", fmt.Sprint(payout)},            // pnl percent is redundant to rebalancer
+		// 	{"treasuryProfit", fmt.Sprint(payout)}, // need to calc
+		// 	{"vaultProfit", fmt.Sprint(payout)},
+		// 	{"stakeProfit", fmt.Sprint(payout)},
+		// 	{"liquidityProfit", fmt.Sprint(payout)},
+		// }))
 
 	}
 
+	if len(orderUpdates_) > 0 {
+		if err := db.ProcessBatchOrders(supabaseClient, time.Now(), orderUpdates_, OrderGlobalUpdate_); err != nil {
+			logrus.Error(fmt.Sprintf("Error processing batch orders: %v", err.Error()))
+		}
+	} else {
+		logrus.Info("No order processed")
+	}
+
 	// output that will be used to merge new metric data from processed orders
-	utils.LogInfo("Processed orders results", utils.FormatKeyValueLogs([][2]string{
-		{"ordersActivated", fmt.Sprint(ordersActivated)},
-		{"ordersFilled", fmt.Sprint(ordersFilled)},
-		{"ordersLiquidated", fmt.Sprint(ordersLiquidated)},
-		{"ordersStopped", fmt.Sprint(ordersStopped)},
-		{"pnlProfits", fmt.Sprint(pnlProfits)},
-		{"pnlLosses", fmt.Sprint(pnlLosses)},
-		{"treasuryProfit", fmt.Sprint(treasuryProfit)},
-		{"vaultProfit", fmt.Sprint(vaultProfit)},
-		{"stakeProfit", fmt.Sprint(stakeProfit)},
-		{"liquidityProfit", fmt.Sprint(liquidityProfit)},
-	}))
+	// utils.LogInfo("Processed orders results", utils.FormatKeyValueLogs([][2]string{
+	// 	{"ordersActivated", fmt.Sprint(ordersActivated)},
+	// 	{"ordersFilled", fmt.Sprint(ordersFilled)},
+	// 	{"ordersLiquidated", fmt.Sprint(ordersLiquidated)},
+	// 	{"ordersStopped", fmt.Sprint(ordersStopped)},
+	// 	{"pnlProfits", fmt.Sprint(pnlProfits)},
+	// 	{"pnlLosses", fmt.Sprint(pnlLosses)},
+	// 	{"treasuryProfit", fmt.Sprint(treasuryProfit)},
+	// 	{"vaultProfit", fmt.Sprint(vaultProfit)},
+	// 	{"stakeProfit", fmt.Sprint(stakeProfit)},
+	// 	{"liquidityProfit", fmt.Sprint(liquidityProfit)},
+	// }))
 	// now need to process the orders
 	// 	ID:                      1d220d57-2864-4d2c-9631-8811d01714ea
 	// UserID:                  1d2664a39eee6098

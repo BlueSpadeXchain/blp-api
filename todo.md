@@ -50,7 +50,7 @@ protocol orders take priority
     - [x] test
   - [x] create order
   - [ ] modify order
-  - [ ] group merge orders
+  - [x] group merge orders
   - [x] limit order
   - [x] stop loss enabled
   - [x] take profit enabled
@@ -58,9 +58,9 @@ protocol orders take priority
   - [x] create evm contract to be listened to
   - [x] create listener application
     - [x] upon message received call the api to notice log/db log
-- [ ] create of position orders, assume large liquidity 100m BUSD, max order size 1k
+- [x] create of position orders, assume large liquidity 100m BUSD, max order size 1k
   - [x] validate sigs (user or relay)
-  - [ ] test liquidation order
+  - [x] test liquidation order
 - [x] add jwt/auth to supabase queries
 - [ ] rebalancer
   - [x] connect to price feed for latest data
@@ -99,12 +99,14 @@ protocol orders take priority
   - [ ] gui for historical data
   - [ ] create cron job to snapshot data (hourly or daily)
   - [ ] create snapshot api
-- [ ] change liquidations from 100% to 99%
+- [x] change liquidations from 100% to 95%
   - [ ] change math for liqPrice calcualtion
-- [ ] read replicas for all get calls (especially for rebalancer)
-- [ ] stop loss price, has no indication of value, this should be precalculated
-- [ ] handleResponse needs to be revisioned to use utils.Error instead of error
-- [ ] change fee to be based off of leverage, instead of collateral
+    - [ ] create fn
+    - [ ] cancel fn
+- [x] read replicas for all get calls (especially for rebalancer)
+- [x] stop loss price, has no indication of value, this should be precalculated
+- [x] handleResponse needs to be revisioned to use utils.Error instead of error
+- [x] change fee to be based off of leverage, instead of collateral
 - [ ] add minimumum order side of 10 usd
 
 ### Edge cases TODO

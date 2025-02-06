@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func LogCreateOrderResponse2(response db.OrderResponse2) {
+func LogCreateOrderResponse(response db.OrderResponse) {
 	if logrus.GetLevel() < logrus.InfoLevel {
 		return
 	}
@@ -18,6 +18,7 @@ func LogCreateOrderResponse2(response db.OrderResponse2) {
 			"UserID:                  %s\n"+
 			"Order Type:              %s\n"+
 			"Leverage:                %.2f\n"+
+			"Pair:                    %s\n"+
 			"Pair ID:                 %s\n"+
 			"Order Status:            %s\n"+
 			"Collateral:              %.2f\n"+
@@ -38,7 +39,8 @@ func LogCreateOrderResponse2(response db.OrderResponse2) {
 		response.UserID,
 		response.OrderType,
 		response.Leverage,
-		response.PairId,
+		response.Pair,
+		response.PairID,
 		response.OrderStatus,
 		response.Collateral,
 		response.EntryPrice,
@@ -59,7 +61,7 @@ func LogCreateOrderResponse2(response db.OrderResponse2) {
 	logrus.Info(message)
 }
 
-func LogProcessedOrderResult(response db.OrderResponse2) {
+func LogProcessedOrderResult(response db.OrderResponse) {
 	if logrus.GetLevel() < logrus.InfoLevel {
 		return
 	}
@@ -70,6 +72,7 @@ func LogProcessedOrderResult(response db.OrderResponse2) {
 			"UserID:                  %s\n"+
 			"Order Type:              %s\n"+
 			"Leverage:                %.2f\n"+
+			"Pair:                    %s\n"+
 			"Pair ID:                 %s\n"+
 			"Order Status:            %s\n"+
 			"Collateral:              %.2f\n"+
@@ -90,7 +93,8 @@ func LogProcessedOrderResult(response db.OrderResponse2) {
 		response.UserID,
 		response.OrderType,
 		response.Leverage,
-		response.PairId,
+		response.Pair,
+		response.PairID,
 		response.OrderStatus,
 		response.Collateral,
 		response.EntryPrice,

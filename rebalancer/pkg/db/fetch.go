@@ -3,11 +3,14 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/supabase-community/supabase-go"
 )
 
-func GetOrdersParsingRange(client *supabase.Client, pairId string, minPrice, maxPrice float64) (*[]OrderResponse2, error) {
+func GetOrdersParsingRange(client *supabase.Client, pairId string, minPrice, maxPrice float64) (*[]OrderResponse, error) {
 	params := map[string]interface{}{
 		"pair_id_":   pairId,
 		"min_price_": minPrice,
@@ -22,10 +25,66 @@ func GetOrdersParsingRange(client *supabase.Client, pairId string, minPrice, max
 	}
 
 	// edge case: can return empty array
-	var orders *[]OrderResponse2
+	var orders *[]OrderResponse
 	if err := json.Unmarshal([]byte(response), &orders); err != nil {
 		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
 	}
 
 	return orders, nil
+}
+
+func (o *OrderResponse) UnmarshalJSON(data []byte) error {
+	type Alias OrderResponse // Create alias to avoid recursion
+
+	// Temporary struct with string fields for parsing
+	temp := struct {
+		ID            string `json:"id"`
+		UserID        string `json:"userid"`
+		CreatedAt     string `json:"created_at"`
+		SignedAt      string `json:"signed_at"`
+		StartedAt     string `json:"started_at"`
+		ModifiedAt    string `json:"modified_at"`
+		EndedAt       string `json:"ended_at"`
+		ProfitAndLoss string `json:"pnl"`
+		*Alias
+	}{
+		Alias: (*Alias)(o),
+	}
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Parse UUIDs
+	if id, err := uuid.Parse(temp.ID); err == nil {
+		o.ID = id
+	}
+	if userID, err := uuid.Parse(temp.UserID); err == nil {
+		o.UserID = userID
+	}
+
+	// Parse timestamps
+	layout := time.RFC3339
+	if t, err := time.Parse(layout, temp.CreatedAt); err == nil {
+		o.CreatedAt = t
+	}
+	if t, err := time.Parse(layout, temp.SignedAt); err == nil {
+		o.SignedAt = t
+	}
+	if t, err := time.Parse(layout, temp.StartedAt); err == nil {
+		o.StartedAt = t
+	}
+	if t, err := time.Parse(layout, temp.ModifiedAt); err == nil {
+		o.ModifiedAt = t
+	}
+	if t, err := time.Parse(layout, temp.EndedAt); err == nil {
+		o.EndedAt = t
+	}
+
+	// Parse ProfitAndLoss to float64
+	if pnl, err := strconv.ParseFloat(temp.ProfitAndLoss, 64); err == nil {
+		o.ProfitAndLoss = pnl
+	}
+
+	return nil
 }
