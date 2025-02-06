@@ -79,6 +79,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.ClosePrice = 0
 						orderUpdate_.TpValue = 0
 						orderUpdate_.Pnl += payout
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.TakeProfitCollateral * (order.Leverage - 1)
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
@@ -123,6 +124,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.EntryPrice = order.EntryPrice
 						orderUpdate_.ClosePrice = markPrice
 						orderUpdate_.Pnl += payout
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
 						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
@@ -173,6 +175,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.EntryPrice = order.EntryPrice
 						orderUpdate_.ClosePrice = markPrice
 						orderUpdate_.Pnl -= (liquidityChange - payout)
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
 						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
@@ -231,6 +234,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.EntryPrice = order.EntryPrice
 						orderUpdate_.ClosePrice = order.LiquidationPrice
 						orderUpdate_.Pnl -= (liquidityChange - payout)
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity = -order.TakeProfitCollateral
 						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
@@ -307,6 +311,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.ClosePrice = 0
 						orderUpdate_.TpValue = 0
 						orderUpdate_.Pnl += payout
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.TakeProfitCollateral * (order.Leverage - 1)
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
@@ -351,6 +356,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.EntryPrice = order.EntryPrice
 						orderUpdate_.ClosePrice = markPrice
 						orderUpdate_.Pnl += payout
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
 						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
@@ -401,6 +407,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.EntryPrice = order.EntryPrice
 						orderUpdate_.ClosePrice = markPrice
 						orderUpdate_.Pnl -= (liquidityChange - payout)
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity -= value
 						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
@@ -459,6 +466,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.EntryPrice = order.EntryPrice
 						orderUpdate_.ClosePrice = order.LiquidationPrice
 						orderUpdate_.Pnl -= (liquidityChange - payout)
+						orderUpdate_.Collateral = order.Collateral
 
 						orderUpdate_.OrderGlobalUpdate.CurrentLiquidity = -order.TakeProfitCollateral
 						orderUpdate_.OrderGlobalUpdate.CurrentOrdersActive = -1
