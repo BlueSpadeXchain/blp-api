@@ -231,7 +231,7 @@ func CloseOrder(client *supabase.Client, orderID string) (*UnsignedCloseOrderRes
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderID)
+		return nil, fmt.Errorf("db error: failed to execute close_order for order ID %v", orderID)
 	}
 
 	var order UnsignedCloseOrderResponse
@@ -263,7 +263,7 @@ func SignCloseOrder(client *supabase.Client, orderId, signatureId string, payout
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderId)
+		return nil, fmt.Errorf("db error: failed to execute close_order for order ID %v", orderId)
 	}
 
 	var order SignedCloseOrderResponse
