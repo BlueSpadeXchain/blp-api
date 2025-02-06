@@ -206,6 +206,10 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 							payout = value - closeFee_
 							liquidityChange = order.Collateral - order.TakeProfitCollateral
 							closeFee_ += liquidityChange - value
+							if closeFee_ > liquidityChange {
+								payout = 0
+								closeFee_ = liquidityChange
+							}
 							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= liquidityChange * (order.Leverage - 1)
 							orderUpdate_.TpValue = 0
 
@@ -215,6 +219,10 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 							closeFee_ = order.Collateral * order.Leverage * 0.001
 							payout = value - closeFee_
 							closeFee_ += order.Collateral - value
+							if closeFee_ > order.Collateral {
+								payout = 0
+								closeFee_ = order.Collateral
+							}
 							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.Collateral * (order.Leverage - 1)
 							orderUpdate_.TpValue = order.TakeProfitValue
 						}
@@ -426,6 +434,10 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 							payout = value - closeFee_
 							liquidityChange = order.Collateral - order.TakeProfitCollateral
 							closeFee_ += liquidityChange - value
+							if closeFee_ > liquidityChange {
+								payout = 0
+								closeFee_ = liquidityChange
+							}
 							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= liquidityChange * (order.Leverage - 1)
 							orderUpdate_.TpValue = 0
 
@@ -435,6 +447,10 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 							closeFee_ = order.Collateral * order.Leverage * 0.001
 							payout = value - closeFee_
 							closeFee_ += order.Collateral - value
+							if closeFee_ > order.Collateral {
+								payout = 0
+								closeFee_ = order.Collateral
+							}
 							orderUpdate_.OrderGlobalUpdate.CurrentBorrowed -= order.Collateral * (order.Leverage - 1)
 							orderUpdate_.TpValue = order.TakeProfitValue
 						}
