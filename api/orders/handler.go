@@ -9,18 +9,9 @@ import (
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
 
-// user sends signed request
-// request is validated and then added to queue
-// we have order requests and close requests only
-
-// if price is A -> B
-// / user makes order for 100 USD and liquidation at 150 usd or 50 usd
-// then the price gets to 80 usd, how much money does his have, and how much money does he need to add to stablize his position
-// remember this is in the context of I can only add/remove via another order request, or close
 func Handler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if rec := recover(); rec != nil {
@@ -56,30 +47,22 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		switch query.Get("query") {
-		// case "open-order": // need to migrate
-		// 	response, err = OpenOrderRequest(r)
-		// 	HandleResponse(w, r, supabaseClient, response, err)
-		// 	return
-		// case "close-order":
-		// 	response, err = CloseOrderRequest(r)
-		// 	HandleResponse(w, r, supabaseClient, response, err)
-		// 	return
-		case "create-order-unsigned": // returns order with uuid + hash to sign
+		case "create-order-unsigned": // returns order with uuid + hash to sign, deprecated
 			response, err = UnsignedOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "create-order-signed": // order must include order uuid, and signature
-			response, err = SignedOrderRequest(r, supabaseClient)
+		case "create-order": // returns order with uuid + hash to sign
+			response, err = UnsignedCreateOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "sign-order":
+			response, err = SignedCreateOrderRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "get-order-by-id":
 			response, err = GetOrderByIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		// case "get-orders-by-id":
-		// 	response, err = GetOrdersByIdRequest(r, supabaseClient)
-		// 	HandleResponse(w, r, supabaseClient, response, err)
-		// 	return
 		case "get-orders-by-user-id":
 			response, err = GetOrdersByUserIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
@@ -88,17 +71,51 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetOrdersByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "get-orders":
+		case "get-order":
 			response, err = GetOrderByIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "close-order":
+			response, err = UnsignedCloseOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "sign-close-order":
+			response, err = SignedCloseOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "cancel-order":
+			response, err = UnsignedCancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "sign-cancel-order":
+			response, err = SignedCancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "modify-order":
+			response, err = UnsignedCancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "sign-modify-order":
+			response, err = SignedCancelOrderRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// case "get-order-by-id-old": // deprecated
+		// 	response, err = GetOrderByIdRequest_old(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
+		// case "get-orders-by-user-id-old": // deprecated
+		// 	response, err = GetOrdersByUserIdRequest_old(r, supabaseClient)
+		// 	HandleResponse(w, r, supabaseClient, response, err)
+		// 	return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))
 			return
 		}
 	}))
-
+	//userid funded: 1d2664a39eee6098
 	handlerWithCORS.ServeHTTP(w, r)
 }
 
@@ -108,13 +125,12 @@ func HandleResponse(w http.ResponseWriter, r *http.Request, supabaseClient *supa
 			utils.LogError("Failed to log error", logErr.Error())
 		}
 
-		logrus.Error(err.Error())
-
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(err)
 		return
 	}
 
+	utils.LogInfo("response", fmt.Sprint(response))
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

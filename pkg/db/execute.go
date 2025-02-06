@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -50,13 +51,19 @@ func ModifyUserBalance(client *supabase.Client, userID string, newBalance int64)
 	return nil
 }
 
-func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) {
+// deprecated
+func SignOrder_old(client *supabase.Client, orderId string) (*OrderResponse_old, error) {
+	_, err := uuid.Parse(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID format: %v", err)
+	}
+
 	params := map[string]interface{}{
 		"order_id": orderId,
 	}
 
 	// Execute the RPC call
-	response := client.Rpc("sign_order", "exact", params)
+	response := client.Rpc("sign_order", "estimate", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -68,7 +75,92 @@ func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) 
 		return nil, fmt.Errorf("db error: failed to execute create_order")
 	}
 
-	var order OrderResponse
+	var order OrderResponse_old
+	if err := json.Unmarshal([]byte(response), &order); err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
+func SignOrder(client *supabase.Client, orderId string) (*SignOrderResponse, error) {
+	_, err := uuid.Parse(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID format: %v", err)
+	}
+
+	params := map[string]interface{}{
+		"order_id": orderId,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("sign_order2", "estimate", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute create_order")
+	}
+
+	var order SignOrderResponse
+	if err := json.Unmarshal([]byte(response), &order); err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
+func CreateOrder(
+	client *supabase.Client,
+	userId, orderType, pair, pairId string,
+	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitValue, takeProfitCollateral float64) (*UnsignedCreateOrderResponse, error) {
+	// Convert chainID, block, and depositNonce to string for TEXT type in the database
+	params := map[string]interface{}{
+		"user_id":     userId,
+		"order_type":  orderType,
+		"leverage":    leverage,
+		"pair":        pair,
+		"pair_id":     pairId,
+		"collateral":  collateral,
+		"entry_price": entryPrice,
+		"liq_price":   liquidationPrice,
+		"max_price":   maxPrice,
+	}
+
+	if limitPrice != 0 {
+		params["lim_price"] = limitPrice
+	}
+
+	if stopLossPrice != 0 {
+		params["stop_price"] = stopLossPrice
+	}
+
+	if takeProfitPrice != 0 && takeProfitValue != 0 && takeProfitCollateral != 0 {
+		params["tp_price"] = takeProfitPrice
+		params["tp_value"] = takeProfitValue
+		params["tp_collateral"] = takeProfitCollateral
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("create_order2", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute create_order for user ID %v", userId)
+	}
+
+	var order UnsignedCreateOrderResponse
 	err := json.Unmarshal([]byte(response), &order)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
@@ -77,7 +169,7 @@ func SignOrder(client *supabase.Client, orderId string) (*OrderResponse, error) 
 	return &order, nil
 }
 
-func CreateOrder(client *supabase.Client, userId, orderType string, leverage float64, pair string, collateral, entryPrice, liquidationPrice float64) (*OrderResponse, error) {
+func CreateOrder_old(client *supabase.Client, userId, orderType string, leverage float64, pair string, collateral, entryPrice, liquidationPrice float64) (*OrderResponse_old, error) {
 	// Convert chainID, block, and depositNonce to string for TEXT type in the database
 	params := map[string]interface{}{
 		"user_id":     userId,
@@ -104,7 +196,7 @@ func CreateOrder(client *supabase.Client, userId, orderType string, leverage flo
 		return nil, fmt.Errorf("db error: failed to execute create_order for user ID %v", userId)
 	}
 
-	var order OrderResponse
+	var order OrderResponse_old
 	err := json.Unmarshal([]byte(response), &order)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
@@ -122,17 +214,124 @@ func ModifyOrder(client *supabase.Client, orderID string, updatedData map[string
 	return nil
 }
 
-func CloseOrder(client *supabase.Client, orderID string) error {
-	updateData := map[string]interface{}{
-		"status": "canceled",
+func CloseOrder(client *supabase.Client, orderID string) (*UnsignedCloseOrderResponse, error) {
+	params := map[string]interface{}{
+		"order_id": orderID,
 	}
 
-	_, _, err := client.From("orders").Update(updateData, "", "").Eq("id", orderID).Execute()
-	if err != nil {
-		log.Printf("Failed to close order: %v", err)
-		return err
+	// Execute the RPC call
+	response := client.Rpc("unsigned_close_order", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
-	return nil
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderID)
+	}
+
+	var order UnsignedCloseOrderResponse
+	err := json.Unmarshal([]byte(response), &order)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
+func SignCloseOrder(client *supabase.Client, orderId, signatureId string, payoutValue, feeValue float64) (*SignedCloseOrderResponse, error) {
+	params := map[string]interface{}{
+		"order_id":     orderId,
+		"signature_id": signatureId,
+		"payout_value": payoutValue,
+		"fee_value":    feeValue,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("signed_close_order", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderId)
+	}
+
+	var order SignedCloseOrderResponse
+	err := json.Unmarshal([]byte(response), &order)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
+func CancelOrder(client *supabase.Client, orderID string) (*UnsignedCancelOrderResponse, error) {
+	params := map[string]interface{}{
+		"order_id": orderID,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("unsigned_cancel_order", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderID)
+	}
+
+	var order UnsignedCancelOrderResponse
+	err := json.Unmarshal([]byte(response), &order)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
+func SignCancelOrder(client *supabase.Client, orderId, signatureId string) (*SignedCancelOrderResponse, error) {
+	params := map[string]interface{}{
+		"order_id":     orderId,
+		"signature_id": signatureId,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("signed_cancel_order", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderId)
+	}
+
+	var order SignedCancelOrderResponse
+	err := json.Unmarshal([]byte(response), &order)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
 }
 
 func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) (*UserResponse, error) {

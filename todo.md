@@ -50,36 +50,41 @@ protocol orders take priority
     - [x] test
   - [x] create order
   - [ ] modify order
-  - [ ] group merge orders
+  - [x] group merge orders
+  - [x] limit order
+  - [x] stop loss enabled
+  - [x] take profit enabled
 - [x] create listener for contract changes
   - [x] create evm contract to be listened to
   - [x] create listener application
     - [x] upon message received call the api to notice log/db log
-- [ ] create of position orders, assume large liquidity 100m BUSD, max order size 1k
+- [x] create of position orders, assume large liquidity 100m BUSD, max order size 1k
   - [x] validate sigs (user or relay)
-  - [ ] test liquidation order
+  - [x] test liquidation order
 - [x] add jwt/auth to supabase queries
 - [ ] rebalancer
   - [x] connect to price feed for latest data
   - [ ] rebalancer hosting
     - [x] launch VM
     - [x] activate
+    - [x] use railway
+    - [ ] shutdown oracle vm
     - [ ] deploy ci/cd for VM
   - [x] get db and initialize liquidations call to api
 - [x] organize sql queries
 - [x] fix sql files for sqllite testing
 - [x] add global balance tracking
-- [ ] scheduled distributions
-- [ ] deposit/stake change to use price feed latest price when depositing
-- [ ] enable fees
-  - [ ] from opening
-  - [ ] from closing
-  - [ ] from liquidations
-  - [ ] utilization fee
+- [x] scheduled distributions
+- [x] deposit/stake change to use price feed latest price when depositing
+- [x] enable fees
+  - [x] from opening
+  - [x] from closing
+  - [x] from liquidations
+  - [x] utilization fee
 - [ ] api documentation
 - [ ] readme sysdoc
 - [ ] order queue
-- [ ] loadbalancer
+- [x] loadbalancer
 - [ ] ts example script
 - [x] poke test db cron job
 - [ ] withdrawls
@@ -87,8 +92,22 @@ protocol orders take priority
   - [ ] kill switch
   - [ ] backend functions
 - [ ] staking
-  - [ ] blu/blp distribution
-  - [ ] "mint" usdc
+  - [x] blu/blp distribution
+  - [x] "mint" usdc
+- [ ] metrics
+  - [x] test snapshot history
+  - [ ] gui for historical data
+  - [ ] create cron job to snapshot data (hourly or daily)
+  - [ ] create snapshot api
+- [x] change liquidations from 100% to 95%
+  - [ ] change math for liqPrice calcualtion
+    - [ ] create fn
+    - [ ] cancel fn
+- [x] read replicas for all get calls (especially for rebalancer)
+- [x] stop loss price, has no indication of value, this should be precalculated
+- [x] handleResponse needs to be revisioned to use utils.Error instead of error
+- [x] change fee to be based off of leverage, instead of collateral
+- [ ] add minimumum order side of 10 usd
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

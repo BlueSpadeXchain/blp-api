@@ -59,6 +59,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = DespositRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		// todo
+		case "stake":
+			response, err = DespositRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
 		case "user-data":
 			response, err = UserDataRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
@@ -75,6 +80,26 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "get-deposits-by-user-address":
+			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "get-withdrawls-by-user-id":
+			response, err = GetDepositsByUserIdRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "get-withdrawls-by-user-address":
+			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "get-stakes-by-user-id":
+			response, err = GetDepositsByUserIdRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		// todo
+		case "get-stakes-by-user-address":
 			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return

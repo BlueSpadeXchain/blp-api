@@ -15,16 +15,30 @@ type UserResponse struct {
 }
 
 type OrderResponse struct {
-	ID         string  `json:"id"`
-	UserID     string  `json:"userid"`
-	OrderType  string  `json:"order_type"`
-	Leverage   float64 `json:"leverage"`
-	Status     string  `json:"status"`
-	EntryPrice float64 `json:"entry_price"`
-	LiqPrice   float64 `json:"liq_price"`
-	CreatedAt  string  `json:"created_at"`
-	EndedAt    string  `json:"ended_at"`
-	Collateral float64 `json:"collateral"`
+	ID                   string  `json:"id"`
+	UserID               string  `json:"userid"`
+	OrderType            string  `json:"order_type"`
+	Leverage             float64 `json:"leverage"`
+	Pair                 string  `json:"pair"`
+	PairId               string  `json:"pair_id"`
+	OrderStatus          string  `json:"status"`
+	Collateral           float64 `json:"collateral"`
+	EntryPrice           float64 `json:"entry_price"`
+	ClosePrice           float64 `json:"close_price"`
+	LiquidationPrice     float64 `json:"liq_price"`
+	MaxPrice             float64 `json:"max_price"`
+	MaxValue             float64 `json:"max_value"`
+	LimitPrice           float64 `json:"limit_price"`
+	StopLossPrice        float64 `json:"stop_price"`
+	TakeProfitPrice      float64 `json:"tp_price"`
+	TakeProfitValue      float64 `json:"tp_value"`
+	TakeProfitCollateral float64 `json:"tp_collateral"`
+	CreatedAt            string  `json:"created_at"`
+	SignedAt             string  `json:"signed_at"`
+	StartedAt            string  `json:"started_at"`
+	ModifiedAt           string  `json:"modified_at"`
+	EndedAt              string  `json:"ended_at"`
+	ProfitAndLoss        float64 `json:"pnl"`
 }
 
 type OrderAndUserResponse struct {
@@ -54,4 +68,55 @@ type SupabaseError struct {
 	Details string `json:"details"`
 	Hint    string `json:"hint"`
 	Message string `json:"message"`
+}
+
+type UnsignedCreateOrderResponse struct {
+	Order         OrderResponse `json:"order"`
+	SignatureId   string        `json:"signature_id"`
+	SignatureHash string        `json:"signature_hash"`
+	ExpiryTime    string        `json:"expiry_time"`
+}
+
+type SignOrderResponse struct {
+	Order OrderResponse `json:"order"`
+}
+
+type UnsignedCloseOrderResponse struct {
+	OrderId       string `json:"order_id"`
+	SignatureId   string `json:"signature_id"`
+	SignatureHash string `json:"signature_hash"`
+	ExpiryTime    string `json:"expiry_time"`
+}
+
+type UnsignedCancelOrderResponse struct {
+	OrderId       string `json:"order_id"`
+	SignatureId   string `json:"signature_id"`
+	SignatureHash string `json:"signature_hash"`
+	ExpiryTime    string `json:"expiry_time"`
+}
+
+type SignedCancelOrderResponse struct {
+	Order        OrderResponse `json:"order"`
+	IsValid      bool          `json:"is_valid"`
+	ErrorMessage string        `json:"error_message"`
+}
+
+type SignedCloseOrderResponse struct {
+	Order        OrderResponse `json:"order"`
+	IsValid      bool          `json:"is_valid"`
+	ErrorMessage string        `json:"error_message"`
+}
+
+type GetSignatureValidationHashResponse struct {
+	Hash string `json:"signature_hash"`
+}
+
+type GlobalStateResponse struct {
+	Key       string  `json:"key"`
+	Value     float64 `json:"value"`
+	UpdatedAt string  `json:"updated_at"`
+}
+
+type GetSignatureHashResponse struct {
+	Hash string `json:"signature_hash"`
 }

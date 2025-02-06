@@ -24,14 +24,6 @@ type CreateOrderSignedRequestParams struct {
 	Signature    string `query:"sig"`           // Signature over id . value . entry . slip . lev . type
 }
 
-type OrderCloseParams struct {
-	Signer     string `query:"addr"`
-	OrderId    string `query:"order"` // from db
-	PerpId     string `query:"perp"`  // target of perp
-	Percentage string `query:"percent"`
-	Signature  string `query:"sig"` // sign over order . id
-}
-
 type OrderData struct {
 	OrderId          string `json:"orderId"`
 	NetValue         string `json:"netValue"`
