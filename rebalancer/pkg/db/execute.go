@@ -9,37 +9,35 @@ import (
 )
 
 func ProcessBatchOrders(client *supabase.Client, batchTimestamp time.Time, orderUpdates []OrderUpdate, globalUpdates OrderGlobalUpdate) error {
-	// orderUpdatesJSON, err := json.Marshal(orderUpdates)
-	// if err != nil {
-	// 	return fmt.Errorf("error marshaling order updates: %w", err)
-	// }
-
-	// // Convert globalUpdates to JSON
-	// globalUpdatesJSON, err := json.Marshal(globalUpdates)
-	// if err != nil {
-	// 	return fmt.Errorf("error marshaling global updates: %w", err)
-	// }
-
-	// // arrayStr := fmt.Sprintf("{%s}", strings.Trim(string(orderUpdatesJSON), "[]"))
-	// castSQL := fmt.Sprintf("SELECT ARRAY(SELECT json_populate_recordset(null::order_update, '%s'::json))", string(orderUpdatesJSON))
-
-	// orderUpdatesArray := make([]string, len(orderUpdates))
-	// for i, o := range orderUpdates {
-	// 	orderUpdatesArray[i] = fmt.Sprintf("ROW(%d, '%s', %f)::order_update", o.OrderID, o.NewStatus, o.NewPrice)
-	// }
-	// orderUpdatesSQL := "ARRAY[" + strings.Join(orderUpdatesArray, ", ") + "]::order_update[]"
-
-	// // Convert OrderGlobalUpdate to a PostgreSQL composite type
-	// globalUpdateJSON, err := json.Marshal(globalUpdate)
-	// if err != nil {
-	// 	return fmt.Errorf("error marshaling order global update: %w", err)
-	// }
-	// globalUpdateSQL := fmt.Sprintf("ROW(%s)::order_global_update", string(globalUpdateJSON))
+	orderGlobalUpdateTuple := fmt.Sprintf(
+		"(%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f)",
+		globalUpdates.CurrentBorrowed,
+		globalUpdates.CurrentLiquidity,
+		globalUpdates.CurrentOrdersActive,
+		globalUpdates.CurrentOrdersLimit,
+		globalUpdates.CurrentOrdersPending,
+		globalUpdates.TotalBorrowed,
+		globalUpdates.TotalLiquidations,
+		globalUpdates.TotalOrdersActive,
+		globalUpdates.TotalOrdersFilled,
+		globalUpdates.TotalOrdersLimit,
+		globalUpdates.TotalOrdersLiquidated,
+		globalUpdates.TotalOrdersStopped,
+		globalUpdates.TotalPnlLosses,
+		globalUpdates.TotalPnlProfits,
+		globalUpdates.TotalRevenue,
+		globalUpdates.TreasuryBalance,
+		globalUpdates.TotalTreasuryProfits,
+		globalUpdates.VaultBalance,
+		globalUpdates.TotalVaultProfits,
+		globalUpdates.TotalLiquidityRewards,
+		globalUpdates.TotalStakeRewards,
+	)
 
 	params := map[string]interface{}{
 		"batch_timestamp":      batchTimestamp.Format(time.RFC3339),
 		"order_updates":        orderUpdates,
-		"order_global_update_": globalUpdates,
+		"order_global_update_": orderGlobalUpdateTuple, // Pass as a string
 	}
 	response := client.Rpc("process_batch_orders", "estimate", params) // parse, so we already know the count
 

@@ -3,7 +3,6 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,14 +37,12 @@ func (o *OrderResponse) UnmarshalJSON(data []byte) error {
 
 	// Temporary struct with string fields for parsing
 	temp := struct {
-		ID            string `json:"id"`
-		UserID        string `json:"userid"`
-		CreatedAt     string `json:"created_at"`
-		SignedAt      string `json:"signed_at"`
-		StartedAt     string `json:"started_at"`
-		ModifiedAt    string `json:"modified_at"`
-		EndedAt       string `json:"ended_at"`
-		ProfitAndLoss string `json:"pnl"`
+		ID         string `json:"id"`
+		CreatedAt  string `json:"created_at"`
+		SignedAt   string `json:"signed_at"`
+		StartedAt  string `json:"started_at"`
+		ModifiedAt string `json:"modified_at"`
+		EndedAt    string `json:"ended_at"`
 		*Alias
 	}{
 		Alias: (*Alias)(o),
@@ -58,9 +55,6 @@ func (o *OrderResponse) UnmarshalJSON(data []byte) error {
 	// Parse UUIDs
 	if id, err := uuid.Parse(temp.ID); err == nil {
 		o.ID = id
-	}
-	if userID, err := uuid.Parse(temp.UserID); err == nil {
-		o.UserID = userID
 	}
 
 	// Parse timestamps
@@ -79,11 +73,6 @@ func (o *OrderResponse) UnmarshalJSON(data []byte) error {
 	}
 	if t, err := time.Parse(layout, temp.EndedAt); err == nil {
 		o.EndedAt = t
-	}
-
-	// Parse ProfitAndLoss to float64
-	if pnl, err := strconv.ParseFloat(temp.ProfitAndLoss, 64); err == nil {
-		o.ProfitAndLoss = pnl
 	}
 
 	return nil

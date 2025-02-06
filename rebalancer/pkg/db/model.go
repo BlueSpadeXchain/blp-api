@@ -17,7 +17,7 @@ type SupabaseError struct {
 
 type OrderResponse struct {
 	ID                   uuid.UUID `json:"id"`
-	UserID               uuid.UUID `json:"userid"`
+	UserID               string    `json:"userid"`
 	OrderType            string    `json:"order_type"`
 	Leverage             float64   `json:"leverage"`
 	Pair                 string    `json:"pair"`
@@ -69,7 +69,7 @@ type OrderGlobalUpdate struct {
 // OrderUpdate represents the PostgreSQL order_update type
 type OrderUpdate struct {
 	OrderID             uuid.UUID         `json:"order_id"`
-	UserID              uuid.UUID         `json:"user_id"`
+	UserID              string            `json:"userid"`
 	Status              string            `json:"status"`
 	EntryPrice          float64           `json:"entry_price"`
 	ClosePrice          float64           `json:"close_price"`

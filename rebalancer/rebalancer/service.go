@@ -19,38 +19,15 @@ import (
 func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []float64, minPrice, maxPrice float64) {
 	orders, err := db.GetOrdersParsingRange(supabaseClient, pairId, minPrice, maxPrice)
 	if err != nil {
-		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
+		logrus.Error(fmt.Sprintf("could not fetch orders using pair id %v, minPrice %v, maxPrice %v: %v", pairId, minPrice, maxPrice, err))
 	}
 
-	// type OrderGlobalUpdate struct {
-	// 	CurrentBorrowed       float64 `json:"current_borrowed"`
-	// 	CurrentLiquidity      float64 `json:"current_liquidity"`
-	// 	CurrentOrdersActive   float64 `json:"current_orders_active"`
-	// 	CurrentOrdersLimit    float64 `json:"current_orders_limit"`
-	// 	CurrentOrdersPending  float64 `json:"current_orders_pending"`
-	// 	TotalBorrowed         float64 `json:"total_borrowed"`
-	// 	TotalLiquidations     float64 `json:"total_liquidations"`
-	// 	TotalOrdersActive     float64 `json:"total_orders_active"`
-	// 	TotalOrdersFilled     float64 `json:"total_orders_filled"`
-	// 	TotalOrdersLimit      float64 `json:"total_orders_limit"`
-	// 	TotalOrdersLiquidated float64 `json:"total_orders_liquidated"`
-	// 	TotalOrdersStopped    float64 `json:"total_orders_stopped"`
-	// 	TotalPnlLosses        float64 `json:"total_pnl_losses"`
-	// 	TotalPnlProfits       float64 `json:"total_pnl_profits"`
-	// 	TotalRevenue          float64 `json:"total_revenue"`
-	// 	TreasuryBalance       float64 `json:"treasury_balance"`
-	// 	TotalTreasuryProfits  float64 `json:"total_treasury_profits"`
-	// 	VaultBalance          float64 `json:"vault_balance"`
-	// 	TotalVaultProfits     float64 `json:"total_vault_profits"`
-	// 	TotalLiquidityRewards float64 `json:"total_liquidity_rewards"`
-	// 	TotalStakeRewards     float64 `json:"total_stake_rewards"`
-	// }
-	//----------------------------------------------------------------
-	// we should be tracking tpTriggered
-	// var ordersActivated, ordersFilled, ordersLiquidated, ordersStopped float64
-	// var pnlProfits, pnlLosses, treasuryProfit, vaultProfit, stakeProfit, liquidityProfit, currentOrdersLimit, currentOrdersPending float64
 	orderUpdates_ := []db.OrderUpdate{}
 	OrderGlobalUpdate_ := db.OrderGlobalUpdate{}
+	if orders == nil || len(*orders) == 0 {
+		logrus.Error(fmt.Sprintf("No orders returned for pair id %v, minPrice %v, maxPrice %v", pairId, minPrice, maxPrice))
+		return
+	}
 	for _, order := range *orders {
 		if order.OrderStatus == "unsigned" {
 			continue
@@ -93,10 +70,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 					}
 					if order.MaxPrice <= markPrice {
@@ -140,10 +124,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 						break
 					}
@@ -191,10 +182,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 						break
 					}
@@ -251,10 +249,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 						break
 					}
@@ -288,10 +293,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += openFee * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"openFee", fmt.Sprint(openFee)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 					}
 				} else {
@@ -325,10 +337,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 					}
 					if order.MaxPrice <= markPrice {
@@ -372,10 +391,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 						break
 					}
@@ -423,10 +449,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 						break
 					}
@@ -483,10 +516,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += closeFee_ * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"closeFee", fmt.Sprint(closeFee_)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 						break
 					}
@@ -520,10 +560,17 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 						orderUpdate_.OrderGlobalUpdate.TotalStakeRewards += openFee * 0.3
 
 						utils.LogInfo("Processed order after iteration", utils.FormatKeyValueLogs([][2]string{
-							{"Id", fmt.Sprint(order.ID)},
-							{"openFee", fmt.Sprint(openFee)},
-							{"old stats", fmt.Sprint(order.OrderStatus)},
-							{"new status", fmt.Sprint(orderUpdate_.Status)},
+							{"old status", fmt.Sprint(order.OrderStatus)},
+							{"Order ID", fmt.Sprint(order.ID)},
+							{"User Id", fmt.Sprint(closeFee_)},
+							{"Status", fmt.Sprint(orderUpdate_.Status)},
+							{"EntryPrice", fmt.Sprint(orderUpdate_.EntryPrice)},
+							{"ClosePrice", fmt.Sprint(orderUpdate_.ClosePrice)},
+							{"TpValue", fmt.Sprint(orderUpdate_.TpValue)},
+							{"Pnl", fmt.Sprint(orderUpdate_.Pnl)},
+							{"Collateral", fmt.Sprint(orderUpdate_.Collateral)},
+							{"BalanceChange", fmt.Sprint(orderUpdate_.BalanceChange)},
+							{"EscrowBalanceChange", fmt.Sprint(orderUpdate_.EscrowBalanceChange)},
 						}))
 					}
 				} else {
