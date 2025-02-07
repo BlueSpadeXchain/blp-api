@@ -618,11 +618,11 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		collateral = order_.Collateral - order_.Collateral*0.00025
 	}
 
-	createdAt, err := time.Parse(time.RFC3339Nano, order_.CreatedAt)
+	createdAt, err := time.Parse(time.RFC3339Nano, order_.CreatedAt+"Z")
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid CreatedAt format: %v", err))
 	}
-	elapsedTime := time.Now().UTC().Sub(createdAt).Seconds()
+	elapsedTime := time.Since(createdAt.UTC()).Seconds()
 
 	if totalLiquidity == 0 {
 		return nil, utils.ErrInternal("total liquidity cannot be zero")
