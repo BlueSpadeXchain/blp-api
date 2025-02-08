@@ -645,7 +645,16 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		payoutValue = 0
 	}
 
-	closeResponse, err := db.SignCloseOrder(supabaseClient, params.OrderId, params.SignatureId, payoutValue, feeValue)
+	// params := map[string]interface{}{
+	// 	"order_id":             orderId,
+	// 	"signature_id":         signatureId,
+	// 	"remaining_collateral": remainingCollateral,
+	// 	"payout_value":         payoutValue,
+	// 	"fee_value":            feeValue,
+	// 	"close_price":          closePrice,
+	// }
+
+	closeResponse, err := db.SignCloseOrder(supabaseClient, params.OrderId, params.SignatureId, collateral, payoutValue, feeValue, markPrice)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}

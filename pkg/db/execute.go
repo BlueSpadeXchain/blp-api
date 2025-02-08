@@ -248,18 +248,20 @@ func CloseOrder(client *supabase.Client, orderID string) (*UnsignedCloseOrderRes
 	return &order, nil
 }
 
-func SignCloseOrder(client *supabase.Client, orderId, signatureId string, payoutValue, feeValue float64) (*SignedCloseOrderResponse, error) {
+func SignCloseOrder(client *supabase.Client, orderId, signatureId string, remainingCollateral, payoutValue, feeValue, closePrice float64) (*SignedCloseOrderResponse, error) {
 	params := map[string]interface{}{
-		"order_id":     orderId,
-		"signature_id": signatureId,
-		"payout_value": payoutValue,
-		"fee_value":    feeValue,
+		"order_id":             orderId,
+		"signature_id":         signatureId,
+		"remaining_collateral": remainingCollateral,
+		"payout_value":         payoutValue,
+		"fee_value":            feeValue,
+		"close_price_":         closePrice,
 	}
 
-	utils.LogInfo("signed_close_order params", utils.StringifyStructFields(params, ""))
+	utils.LogInfo("signed_close_order2 params", utils.StringifyStructFields(params, ""))
 
 	// Execute the RPC call
-	response := client.Rpc("signed_close_order", "exact", params)
+	response := client.Rpc("signed_close_order2", "exact", params)
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError
