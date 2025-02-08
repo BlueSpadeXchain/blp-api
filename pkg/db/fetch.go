@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -13,6 +14,9 @@ func GetUserByUserId(client *supabase.Client, userId string) (*UserResponse, err
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
+
+	utils.LogInfo("get_user_by_userid params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_user_by_userid", "exact", params)
 
 	var supabaseError SupabaseError
@@ -39,6 +43,9 @@ func GetDepositsByUserId(client *supabase.Client, userId string) (*[]DepositResp
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
+
+	utils.LogInfo("get_deposits_by_userid params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_deposits_by_userid", "exact", params)
 
 	var supabaseError SupabaseError
@@ -60,6 +67,8 @@ func GetDepositsByUserAddress(client *supabase.Client, walletAddress, walletType
 		"wallet_addr": walletAddress,
 		"wallet_t":    walletType,
 	}
+
+	utils.LogInfo("get_deposits_by_address params", utils.StringifyStructFields(params, ""))
 
 	response := client.Rpc("get_deposits_by_address", "exact", params)
 
@@ -83,6 +92,9 @@ func GetOrderById(client *supabase.Client, id string) (*OrderAndUserResponse, er
 	params := map[string]interface{}{
 		"id_": id,
 	}
+
+	utils.LogInfo("get_order_by_id2 params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_order_by_id2", "exact", params)
 
 	var supabaseError SupabaseError
@@ -103,6 +115,9 @@ func GetOrdersByUserId(client *supabase.Client, userId string) (*[]OrderResponse
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
+
+	utils.LogInfo("get_orders_by_userid2 params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_orders_by_userid2", "exact", params)
 
 	var supabaseError SupabaseError
@@ -124,6 +139,9 @@ func GetOrdersByUserAddress(client *supabase.Client, walletAddress, walletType s
 		"wallet_addr": walletAddress,
 		"wallet_t":    walletType,
 	}
+
+	utils.LogInfo("get_orders_by_address2 params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_orders_by_address2", "exact", params)
 
 	var supabaseError SupabaseError
@@ -144,6 +162,9 @@ func GetSignatureValidationHash(client *supabase.Client, SignatureId string) (*G
 	params := map[string]interface{}{
 		"p_signature_id": SignatureId,
 	}
+
+	utils.LogInfo("get_signature_hash params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_signature_hash", "exact", params)
 
 	var supabaseError SupabaseError
@@ -165,7 +186,8 @@ func GetGlobalStateMetrics(client *supabase.Client, metrics []string) (*[]Global
 		"metrics": metrics,
 	}
 
-	// Call the RPC function in Supabase
+	utils.LogInfo("get_global_state_metrics params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_global_state_metrics", "exact", params)
 
 	// Check for Supabase errors
@@ -190,6 +212,9 @@ func GetSignatureHash(client *supabase.Client, signatureId string) (*GetSignatur
 	params := map[string]interface{}{
 		"p_signature_id": signatureId,
 	}
+
+	utils.LogInfo("get_signature_hash params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_signature_hash", "exact", params)
 
 	var supabaseError SupabaseError

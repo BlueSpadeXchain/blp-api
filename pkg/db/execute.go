@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/supabase-community/supabase-go"
 )
@@ -93,7 +94,8 @@ func SignOrder(client *supabase.Client, orderId string) (*SignOrderResponse, err
 		"order_id": orderId,
 	}
 
-	// Execute the RPC call
+	utils.LogInfo("sign_order2 params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("sign_order2", "estimate", params)
 
 	var supabaseError SupabaseError
@@ -145,7 +147,8 @@ func CreateOrder(
 		params["tp_collateral"] = takeProfitCollateral
 	}
 
-	// Execute the RPC call
+	utils.LogInfo("create_order2 params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("create_order2", "exact", params)
 
 	// Check for any Supabase errors
@@ -219,6 +222,8 @@ func CloseOrder(client *supabase.Client, orderID string) (*UnsignedCloseOrderRes
 		"order_id": orderID,
 	}
 
+	utils.LogInfo("unsigned_close_order params", utils.StringifyStructFields(params, ""))
+
 	// Execute the RPC call
 	response := client.Rpc("unsigned_close_order", "exact", params)
 
@@ -231,7 +236,7 @@ func CloseOrder(client *supabase.Client, orderID string) (*UnsignedCloseOrderRes
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderID)
+		return nil, fmt.Errorf("db error: failed to execute close_order for order ID %v", orderID)
 	}
 
 	var order UnsignedCloseOrderResponse
@@ -251,6 +256,8 @@ func SignCloseOrder(client *supabase.Client, orderId, signatureId string, payout
 		"fee_value":    feeValue,
 	}
 
+	utils.LogInfo("signed_close_order params", utils.StringifyStructFields(params, ""))
+
 	// Execute the RPC call
 	response := client.Rpc("signed_close_order", "exact", params)
 
@@ -263,7 +270,7 @@ func SignCloseOrder(client *supabase.Client, orderId, signatureId string, payout
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute cancel_order for order ID %v", orderId)
+		return nil, fmt.Errorf("db error: failed to execute close_order for order ID %v", orderId)
 	}
 
 	var order SignedCloseOrderResponse
@@ -280,7 +287,8 @@ func CancelOrder(client *supabase.Client, orderID string) (*UnsignedCancelOrderR
 		"order_id": orderID,
 	}
 
-	// Execute the RPC call
+	utils.LogInfo("unsigned_cancel_order params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("unsigned_cancel_order", "exact", params)
 
 	// Check for any Supabase errors
@@ -310,7 +318,8 @@ func SignCancelOrder(client *supabase.Client, orderId, signatureId string) (*Sig
 		"signature_id": signatureId,
 	}
 
-	// Execute the RPC call
+	utils.LogInfo("signed_cancel_order params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("signed_cancel_order", "exact", params)
 
 	// Check for any Supabase errors
@@ -339,6 +348,8 @@ func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) 
 		"wallet_addr": walletAddress,
 		"wallet_t":    walletType,
 	}
+
+	utils.LogInfo("get_or_create_user params", utils.StringifyStructFields(params, ""))
 
 	response := client.Rpc("get_or_create_user", "exact", params)
 
@@ -377,7 +388,8 @@ func AddUserDeposit(client *supabase.Client, walletAddress, walletType, chainID,
 		"val":           value,
 	}
 
-	// Execute the RPC call
+	utils.LogInfo("add_user_deposit params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("add_user_deposit", "exact", params)
 
 	// Check for any Supabase errors

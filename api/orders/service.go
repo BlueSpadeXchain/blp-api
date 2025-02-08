@@ -613,21 +613,21 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 	}
 
 	if order_.TakeProfitValue == 0 {
-		collateral = order_.Collateral - order_.TakeProfitCollateral - order_.Collateral*0.00025
+		collateral = order_.Collateral - order_.TakeProfitCollateral
 	} else {
-		collateral = order_.Collateral - order_.Collateral*0.00025
+		collateral = order_.Collateral
 	}
 
-	createdAt, err := time.Parse(time.RFC3339Nano, order_.CreatedAt)
+	createdAt, err := time.Parse(time.RFC3339Nano, order_.CreatedAt+"Z")
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid CreatedAt format: %v", err))
 	}
-	elapsedTime := time.Now().UTC().Sub(createdAt).Seconds()
+	elapsedTime := time.Since(createdAt.UTC()).Seconds()
 
 	if totalLiquidity == 0 {
 		return nil, utils.ErrInternal("total liquidity cannot be zero")
 	}
-	feePercent := (0.0001 * elapsedTime / 60 * totalBorrowed / totalLiquidity) + 0.00025
+	feePercent := (0.0001 * elapsedTime / 60 * totalBorrowed / totalLiquidity) + 0.001
 
 	// need to calculate the v
 	switch order_.OrderType {
@@ -639,9 +639,11 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		return nil, utils.ErrInternal(fmt.Sprintf("unexpected order type: %v", order_.OrderType))
 	}
 
-	// Calculate feeValue and adjust value
-	feeValue = payoutValue * feePercent
-	payoutValue -= feeValue
+	feeValue = feePercent * payoutValue
+	payoutValue = payoutValue - feeValue - collateral*(order_.Leverage-1)
+	if payoutValue < 0 {
+		payoutValue = 0
+	}
 
 	closeResponse, err := db.SignCloseOrder(supabaseClient, params.OrderId, params.SignatureId, payoutValue, feeValue)
 	if err != nil {
