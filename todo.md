@@ -125,6 +125,11 @@ protocol orders take priority
 - [ ] cleanup rebalancer calls
 - [ ] add liquidation equation function to rebalancer calls
 - [ ] solve viem ecdsa issue
+- [ ] user data re-sync
+  - [ ] db function
+  - [ ] api function
+  - [ ] test script (ts)
+- [ ] local test enviornment auto-init script
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
