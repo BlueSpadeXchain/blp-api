@@ -627,7 +627,8 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 	if totalLiquidity == 0 {
 		return nil, utils.ErrInternal("total liquidity cannot be zero")
 	}
-	feePercent := (0.0001 * elapsedTime / 60 * totalBorrowed / totalLiquidity) + 0.001
+
+	feePercent := (0.0001 * (elapsedTime / 3600) * totalBorrowed / totalLiquidity) + 0.001
 
 	// need to calculate the v
 	switch order_.OrderType {
@@ -640,6 +641,11 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 	}
 
 	feeValue = feePercent * payoutValue
+	fmt.Printf("\n feevalue: %v", feeValue)
+	fmt.Printf("\n feePercent: %v", feePercent)
+	fmt.Printf("\n payoutValue: %v", payoutValue)
+	fmt.Printf("\n elapsedTime: %v", elapsedTime)
+	fmt.Printf("\n 0.0001 * elapsedTime / 3600: %v", 0.0001*elapsedTime/3600)
 	payoutValue = payoutValue - feeValue - collateral*(order_.Leverage-1)
 	if payoutValue < 0 {
 		payoutValue = 0
