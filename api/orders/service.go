@@ -602,13 +602,13 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		return nil, utils.ErrInternal("unexpected response from GetGlobalStateMetrics")
 	}
 
-	var totalBorrowed, totalLiquidity float64
+	var currentBorrowed, currentLiquidity float64
 	for _, metric := range *result {
 		switch metric.Key {
 		case "current_borrowed":
-			totalBorrowed = metric.Value
+			currentBorrowed = metric.Value
 		case "current_liquidity":
-			totalLiquidity = metric.Value
+			currentLiquidity = metric.Value
 		}
 	}
 
@@ -618,16 +618,17 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		collateral = order_.Collateral
 	}
 
-	createdAt, err := time.Parse(time.RFC3339Nano, order_.CreatedAt+"Z")
+	startedAt, err := time.Parse(time.RFC3339Nano, order_.StartedAt+"Z")
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid CreatedAt format: %v", err))
 	}
-	elapsedTime := time.Since(createdAt.UTC()).Seconds()
+	elapsedTime := time.Since(startedAt.UTC()).Seconds()
 
-	if totalLiquidity == 0 {
+	if currentLiquidity == 0 {
 		return nil, utils.ErrInternal("total liquidity cannot be zero")
 	}
-	feePercent := (0.0001 * elapsedTime / 60 * totalBorrowed / totalLiquidity) + 0.001
+
+	feePercent := (0.0001 * (elapsedTime / 3600) * currentBorrowed / currentLiquidity) + 0.001
 
 	// need to calculate the v
 	switch order_.OrderType {
@@ -640,6 +641,14 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 	}
 
 	feeValue = feePercent * payoutValue
+	fmt.Printf("\n feevalue: %v", feeValue)
+	fmt.Printf("\n feePercent: %v", feePercent)
+	fmt.Printf("\n payoutValue: %v", payoutValue)
+	fmt.Printf("\n elapsedTime: %v", elapsedTime)
+	fmt.Printf("\n currentBorrowed: %v", currentBorrowed)
+	fmt.Printf("\n currentLiquidity: %v", currentLiquidity)
+	fmt.Printf("\n currentBorrowed / currentLiquidity: %v", currentBorrowed/currentLiquidity)
+	fmt.Printf("\n 0.0001 * elapsedTime / 3600: %v", 0.0001*elapsedTime/3600)
 	payoutValue = payoutValue - feeValue - collateral*(order_.Leverage-1)
 	if payoutValue < 0 {
 		payoutValue = 0
