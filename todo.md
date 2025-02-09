@@ -85,29 +85,46 @@ protocol orders take priority
 - [ ] readme sysdoc
 - [ ] order queue
 - [x] loadbalancer
-- [ ] ts example script
+- [x] ts example script
 - [x] poke test db cron job
 - [ ] withdrawls
   - [ ] table log
   - [ ] kill switch
   - [ ] backend functions
+  - [ ] db functions
 - [ ] staking
-  - [x] blu/blp distribution
+  - [x] blu distribution
   - [x] "mint" usdc
+  - [ ] backend function
+  - [ ] db function
+  - [ ] frontend staking
+  - [ ] staking metrics (APR etc)
+  - [ ] seperate staking for blu (token) and blp (protocol liquidity)
+  - [ ] blp buying both contract and frontend
 - [ ] metrics
   - [x] test snapshot history
   - [ ] gui for historical data
-  - [ ] create cron job to snapshot data (hourly or daily)
+  - [x] create cron job to snapshot data (hourly or daily)
   - [ ] create snapshot api
+  - [ ] test metrics
+  - [ ] emphsis of fees and volume
+  - [ ] daily active users: frontend telemetry, wallets per order, connected wallets, number of orders
+  - [ ] pair specific volume, liquidity, and volume 
 - [x] change liquidations from 100% to 95%
-  - [ ] change math for liqPrice calcualtion
-    - [ ] create fn
-    - [ ] cancel fn
+  - [x] change math for liqPrice calcualtion
 - [x] read replicas for all get calls (especially for rebalancer)
 - [x] stop loss price, has no indication of value, this should be precalculated
 - [x] handleResponse needs to be revisioned to use utils.Error instead of error
 - [x] change fee to be based off of leverage, instead of collateral
-- [ ] add minimumum order side of 10 usd
+- [ ] add minimumum order side of 10 usd (handle with backend and show error)
+- [ ] log order change history events
+- [ ] free up any users to be able to use 1250x leverage
+- [ ] mainnet hosting/testing
+  - [ ] required beta build and prod builds, ontop of the dev build
+  - [ ] table refresh for mainnet/beta
+- [ ] cleanup rebalancer calls
+- [ ] add liquidation equation function to rebalancer calls
+- [ ] solve viem ecdsa issue
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account
@@ -146,3 +163,4 @@ protocol orders take priority
   - [ ]
 - [ ] reduce function/table access privalages
 - [ ] docker image to run tests
+- [ ] metamask snap for liquidity and blu staking
