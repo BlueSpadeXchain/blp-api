@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -11,7 +12,7 @@ func GetOrdersByUserId_old(client *supabase.Client, userId string) (*[]OrderResp
 	params := map[string]interface{}{
 		"user_id": userId,
 	}
-	response := client.Rpc("get_orders_by_userid", "exact", params)
+	response := client.Rpc("get_orders_by_userid_deprecated", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -34,7 +35,7 @@ func GetOrdersByUserAddress_old(client *supabase.Client, walletAddress, walletTy
 		"wallet_t":    walletType,
 	}
 
-	response := client.Rpc("get_orders_by_address", "exact", params)
+	response := client.Rpc("get_orders_by_address_deprecated", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -58,7 +59,7 @@ func GetOrderById_old(client *supabase.Client, id string) (*OrderAndUserResponse
 	params := map[string]interface{}{
 		"id_": id,
 	}
-	response := client.Rpc("get_order_by_id", "exact", params)
+	response := client.Rpc("get_order_by_id_deprecated", "exact", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -91,4 +92,71 @@ type OrderResponse_old struct {
 	CreatedAt  string  `json:"created_at"`
 	EndedAt    string  `json:"ended_at"`
 	Collateral float64 `json:"collateral"`
+}
+
+func CreateOrder_old(client *supabase.Client, userId, orderType string, leverage float64, pair string, collateral, entryPrice, liquidationPrice float64) (*OrderResponse_old, error) {
+	// Convert chainID, block, and depositNonce to string for TEXT type in the database
+	params := map[string]interface{}{
+		"user_id":     userId,
+		"order_type":  orderType,
+		"leverage":    leverage,
+		"pair":        pair,
+		"collateral":  collateral,
+		"entry_price": entryPrice,
+		"liq_price":   liquidationPrice,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("create_order_deprecated", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute create_order for user ID %v", userId)
+	}
+
+	var order OrderResponse_old
+	err := json.Unmarshal([]byte(response), &order)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
+}
+
+func SignOrder_old(client *supabase.Client, orderId string) (*OrderResponse_old, error) {
+	_, err := uuid.Parse(orderId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid UUID format: %v", err)
+	}
+
+	params := map[string]interface{}{
+		"order_id": orderId,
+	}
+
+	// Execute the RPC call
+	response := client.Rpc("sign_order_deprecated", "estimate", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute create_order")
+	}
+
+	var order OrderResponse_old
+	if err := json.Unmarshal([]byte(response), &order); err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &order, nil
 }
