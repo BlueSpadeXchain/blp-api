@@ -4,7 +4,17 @@ import "fmt"
 
 const Version string = "BLP API v0.0.5"
 
-var Pairs []string = []string{"ethusd", "btcusd"}
+var Pairs []string = []string{
+	"ethusd",
+	"btcusd",
+	"moodengusd",
+	"bnbusd",
+	"solusd",
+	"dogeusd",
+	"suiusd",
+	"trumpusd",
+	"bonkusd",
+	"pnutusd"}
 
 var PairIds []string = []string{
 	"ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
