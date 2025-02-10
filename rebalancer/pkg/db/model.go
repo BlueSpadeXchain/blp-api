@@ -93,3 +93,9 @@ func (ou *OrderUpdate) Scan(value interface{}) error {
 	}
 	return json.Unmarshal(b, &ou)
 }
+
+type GlobalStateResponse struct {
+	Key       string  `json:"key"`
+	Value     float64 `json:"value"`
+	UpdatedAt string  `json:"updated_at"`
+}

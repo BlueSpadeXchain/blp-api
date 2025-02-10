@@ -116,14 +116,14 @@ protocol orders take priority
 - [x] stop loss price, has no indication of value, this should be precalculated
 - [x] handleResponse needs to be revisioned to use utils.Error instead of error
 - [x] change fee to be based off of leverage, instead of collateral
-- [ ] add minimumum order side of 10 usd (handle with backend and show error)
+- [x] add minimumum order side of 10 usd (handle with backend and show error)
 - [ ] log order change history events
-- [ ] free up any users to be able to use 1250x leverage
+- [x] free up any users to be able to use 1250x leverage
 - [ ] mainnet hosting/testing
   - [ ] required beta build and prod builds, ontop of the dev build
   - [ ] table refresh for mainnet/beta
-- [ ] cleanup rebalancer calls
-- [ ] add liquidation equation function to rebalancer calls
+- [x] cleanup rebalancer calls
+- [x] add liquidation equation function to rebalancer calls
 - [ ] solve viem ecdsa issue
 - [ ] user data re-sync
   - [ ] db function

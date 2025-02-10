@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/BlueSpadeXchain/blp-api/rebalancer/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/supabase-community/supabase-go"
 )
@@ -15,6 +16,9 @@ func GetOrdersParsingRange(client *supabase.Client, pairId string, minPrice, max
 		"min_price_": minPrice,
 		"max_price_": maxPrice,
 	}
+
+	utils.LogInfo("get_orders_parsing_range params", utils.StringifyStructFields(params, ""))
+
 	response := client.Rpc("get_orders_parsing_range", "estimate", params) // parse, so we already know the count
 
 	var supabaseError SupabaseError
@@ -30,6 +34,32 @@ func GetOrdersParsingRange(client *supabase.Client, pairId string, minPrice, max
 	}
 
 	return orders, nil
+}
+
+func GetGlobalStateMetrics(client *supabase.Client, metrics []string) (*[]GlobalStateResponse, error) {
+	params := map[string]interface{}{
+		"metrics": metrics,
+	}
+
+	utils.LogInfo("get_global_state_metrics params", utils.StringifyStructFields(params, ""))
+
+	response := client.Rpc("get_global_state_metrics", "exact", params)
+
+	// Check for Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// Parse the response into the GlobalStateResponse slice
+	var metricsResponse []GlobalStateResponse
+	err := json.Unmarshal([]byte(response), &metricsResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &metricsResponse, nil
 }
 
 func (o *OrderResponse) UnmarshalJSON(data []byte) error {
