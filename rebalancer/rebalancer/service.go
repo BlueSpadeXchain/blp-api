@@ -92,6 +92,7 @@ func processOrderLongTakeProfit(globalBorrowed, globalLiquidity, payout, closeFe
 	orderUpdate.TpValue = 0
 	orderUpdate.Pnl += *payout
 	orderUpdate.Collateral = order.Collateral
+	orderUpdate.TakeProfitAt = time.Now()
 
 	*globalBorrowed -= order.TakeProfitCollateral * (order.Leverage - 1)
 	*globalLiquidity -= value

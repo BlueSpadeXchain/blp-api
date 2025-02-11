@@ -1,5 +1,10 @@
 package orderHandler
 
+import (
+	"math"
+	"time"
+)
+
 func validateOrderRequest() error {
 	// _, relayAddress, err := utils.EnvKey2Ecdsa()
 	// if err != nil {
@@ -62,54 +67,25 @@ func validateOrderRequest() error {
 	return nil
 }
 
-// func validateOrderClose(params *OrderCloseParams) error {
-// 	_, relayAddress, err := utils.EnvKey2Ecdsa()
-// 	if err != nil {
-// 		return err
-// 	}
+func getFeeScalingFactor() float64 {
+	return 0.3
+}
 
-// 	orderId := new(big.Int)
-// 	perpId := new(big.Int)
+func getBaseFee() float64 {
+	return 0.001
+}
 
-// 	if len(params.Signer) != 40 {
-// 		return fmt.Errorf("invalid signer length: must be 40 characters")
-// 	}
+func dynamicLeverageFee(leverage float64) float64 {
+	//fee percent = 1/ (1+ scaling factor * log(leverage)) * base fee / 100
+	return 1 / (1 + getFeeScalingFactor()*math.Log(leverage)) * getBaseFee()
+}
 
-// 	if len(params.Signature) != 130 {
-// 		return fmt.Errorf("invalid signature length: must be 130 characters")
-// 	}
+func getPerHourFee() float64 {
+	return 0.0001
+}
 
-// 	if _, ok := orderId.SetString(params.OrderId, 10); !ok {
-// 		return fmt.Errorf("invalid orderId: %s", params.OrderId)
-// 	}
-// 	if _, ok := perpId.SetString(params.PerpId, 10); !ok {
-// 		return fmt.Errorf("invalid perpId: %s", params.PerpId)
-// 	}
+func dynamicUtilizationFee(startTimestamp time.Time, globalBorrowed, globalLiquidity float64) float64 {
+	elapsedTime := time.Since(startTimestamp.UTC()).Seconds()
 
-// 	signer, err := utils.HexToBytes(params.Signer)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	signature, err := utils.HexToBytes(params.Signature)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	var toHash []byte
-// 	toHash = append(toHash, orderId.Bytes()...)
-// 	toHash = append(toHash, perpId.Bytes()...)
-
-// 	hash := crypto.Keccak256Hash(toHash)
-
-// 	sigPublicKey, err := crypto.Ecrecover(hash.Bytes(), signature)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if !bytes.Equal(sigPublicKey, relayAddress.Bytes()) || !bytes.Equal(sigPublicKey, signer) {
-// 		return fmt.Errorf("invalid signature or hash")
-// 	}
-
-// 	return nil
-// }
+	return getPerHourFee() * (elapsedTime / 3600) * globalBorrowed / globalLiquidity
+}

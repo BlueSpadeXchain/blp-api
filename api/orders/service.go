@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	user "github.com/BlueSpadeXchain/blp-api/api/user"
 	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
@@ -172,9 +171,8 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 			markPrice *= 10
 		}
 	}
-	fmt.Printf("\n mark priceL: %v", markPrice)
+
 	// skip mark price evaluation, if limit order
-	fmt.Print("\n got here")
 	if params.LimitPrice == "" && params.EntryPrice != "" {
 		var err error
 		entryPrice, err = strconv.ParseFloat(params.EntryPrice, 64)
@@ -207,7 +205,6 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 	} else {
 		entryPrice = markPrice
 	}
-	fmt.Print("\n got here")
 
 	// limit price
 	if params.LimitPrice != "" && params.LimitPrice != "0" {
@@ -218,32 +215,32 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 		}
 		markPrice = limitPrice
 	}
-	fmt.Print("\n got here0")
-
+	/////////////////////////
 	balance := userData.(*db.UserResponse).Balance
 	if balance < collateral {
 		return nil, utils.ErrInternal(fmt.Sprintf("user %v insufficent balance: expected >=%v, found %v", params.UserId, params.Collateral, balance))
 	}
-	fmt.Print("\n got here1")
 
 	leverage, err := strconv.ParseFloat(params.Leverage, 64)
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid leverage value: %v", err.Error()))
 	}
-	fmt.Print("\n got here")
+
+	openFee := collateral * leverage * dynamicLeverageFee(leverage)
+	effectiveCollateral := collateral - openFee
+	effectiveLeverage := leverage * (collateral / effectiveCollateral)
 
 	// Calculate liquidation price
 	switch params.PositionType {
 	case "long":
-		liqPrice = markPrice * (1 - (1 / leverage))
+		liqPrice = markPrice * (1 - (1 / effectiveLeverage))
 		maxProfitPrice = markPrice * (1 + 10/leverage)
 	case "short":
-		liqPrice = markPrice * (1 + (1 / leverage))
+		liqPrice = markPrice * (1 + (1 / effectiveLeverage))
 		maxProfitPrice = markPrice * (1 - 10/leverage)
 	default:
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid position type: %v", params.PositionType))
 	}
-	fmt.Print("\n got here 45678")
 
 	if liqPrice <= 0 {
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid liquidation price calculated %v", liqPrice))
@@ -302,7 +299,7 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 		if err != nil {
 			return nil, utils.ErrInternal(fmt.Sprintf("invalid take profit price: %v", err.Error()))
 		}
-		tpCollateral = collateral * tpPercent / 100
+		tpCollateral = effectiveCollateral * tpPercent / 100
 		if params.PositionType == "long" {
 			// For long positions: Profit when tpPrice > entryPrice
 			if tpPrice <= entryPrice {
@@ -314,7 +311,7 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 			if tpPrice <= markPrice {
 				return nil, utils.ErrInternal(fmt.Sprintf("take profit %v price must exceed entry price: %v", params.PositionType, markPrice))
 			}
-			tpValue = tpCollateral * leverage * (1 + (tpPrice-markPrice)/markPrice)
+			tpValue = tpCollateral * effectiveLeverage * (1 + (tpPrice-markPrice)/markPrice)
 		} else if params.PositionType == "short" {
 			// For short positions: Profit when tpPrice < entryPrice
 			if tpPrice >= markPrice {
@@ -341,7 +338,7 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 		params.Pair,
 		pairId,
 		leverage,
-		collateral,
+		effectiveCollateral,
 		entryPrice,
 		liqPrice,
 		maxProfitPrice,
@@ -349,7 +346,8 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 		stopLossPrice,
 		tpPrice,
 		tpValue,
-		tpCollateral)
+		tpCollateral,
+		openFee)
 	if err != nil {
 		return nil, utils.ErrInternal(fmt.Sprintf("db post response: %v", err.Error()))
 	}
@@ -547,7 +545,7 @@ func UnsignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client,
 
 func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedCloseOrderRequestParams) (interface{}, error) {
 	var params *SignedCloseOrderRequestParams
-	var markPrice, collateral, payoutValue, feeValue float64
+	var markPrice, collateral, payoutValue float64
 
 	if len(parameters) > 0 {
 		params = parameters[0]
@@ -592,23 +590,22 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		}
 	}
 
-	// do we want deposits
-	// do we want wthdraw fee (hmx does 0.3% for both)
-	// we need a max utilization percent (hmx does 80%)
-	// we need a delevergae buffer (20%)
-
 	result, err := db.GetGlobalStateMetrics(supabaseClient, []string{"current_borrowed", "current_liquidity"})
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil, utils.ErrInternal(err.Error())
+	}
 	if result == nil || len(*result) != 2 {
-		return nil, utils.ErrInternal("unexpected response from GetGlobalStateMetrics")
+		return nil, fmt.Errorf("unexpected response from GetGlobalStateMetrics: %v", err)
 	}
 
-	var currentBorrowed, currentLiquidity float64
+	var globalBorrowed, globalLiquidity float64
 	for _, metric := range *result {
 		switch metric.Key {
 		case "current_borrowed":
-			currentBorrowed = metric.Value
+			globalBorrowed = metric.Value
 		case "current_liquidity":
-			currentLiquidity = metric.Value
+			globalLiquidity = metric.Value
 		}
 	}
 
@@ -617,18 +614,6 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 	} else {
 		collateral = order_.Collateral
 	}
-
-	startedAt, err := time.Parse(time.RFC3339Nano, order_.StartedAt+"Z")
-	if err != nil {
-		return nil, utils.ErrInternal(fmt.Sprintf("invalid CreatedAt format: %v", err))
-	}
-	elapsedTime := time.Since(startedAt.UTC()).Seconds()
-
-	if currentLiquidity == 0 {
-		return nil, utils.ErrInternal("total liquidity cannot be zero")
-	}
-
-	feePercent := (0.0001 * (elapsedTime / 3600) * currentBorrowed / currentLiquidity) + 0.001
 
 	// need to calculate the v
 	switch order_.OrderType {
@@ -640,30 +625,13 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		return nil, utils.ErrInternal(fmt.Sprintf("unexpected order type: %v", order_.OrderType))
 	}
 
-	feeValue = feePercent * payoutValue
-	fmt.Printf("\n feevalue: %v", feeValue)
-	fmt.Printf("\n feePercent: %v", feePercent)
-	fmt.Printf("\n payoutValue: %v", payoutValue)
-	fmt.Printf("\n elapsedTime: %v", elapsedTime)
-	fmt.Printf("\n currentBorrowed: %v", currentBorrowed)
-	fmt.Printf("\n currentLiquidity: %v", currentLiquidity)
-	fmt.Printf("\n currentBorrowed / currentLiquidity: %v", currentBorrowed/currentLiquidity)
-	fmt.Printf("\n 0.0001 * elapsedTime / 3600: %v", 0.0001*elapsedTime/3600)
-	payoutValue = payoutValue - feeValue - collateral*(order_.Leverage-1)
+	closeFee := payoutValue * (dynamicLeverageFee(order_.Leverage) + dynamicUtilizationFee(order_.StartedAt, globalBorrowed, globalLiquidity))
+	payoutValue = payoutValue - closeFee
 	if payoutValue < 0 {
 		payoutValue = 0
 	}
 
-	// params := map[string]interface{}{
-	// 	"order_id":             orderId,
-	// 	"signature_id":         signatureId,
-	// 	"remaining_collateral": remainingCollateral,
-	// 	"payout_value":         payoutValue,
-	// 	"fee_value":            feeValue,
-	// 	"close_price":          closePrice,
-	// }
-
-	closeResponse, err := db.SignCloseOrder(supabaseClient, params.OrderId, params.SignatureId, collateral, payoutValue, feeValue, markPrice)
+	closeResponse, err := db.SignCloseOrder(supabaseClient, params.OrderId, params.SignatureId, collateral, payoutValue, closeFee, markPrice)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}

@@ -38,8 +38,11 @@ type OrderResponse struct {
 	SignedAt             time.Time `json:"signed_at"`
 	StartedAt            time.Time `json:"started_at"`
 	ModifiedAt           time.Time `json:"modified_at"`
+	TakeProfitAt         time.Time `json:"tp_at"`
 	EndedAt              time.Time `json:"ended_at"`
 	ProfitAndLoss        float64   `json:"pnl"`
+	OpenFee              float64   `json:"open_fee"`
+	CloseFee             float64   `json:"close_fee"`
 }
 
 type OrderGlobalUpdate struct {
@@ -76,6 +79,7 @@ type OrderUpdate struct {
 	TpValue             float64           `json:"tp_value"`
 	Pnl                 float64           `json:"pnl"`
 	Collateral          float64           `json:"collateral"`
+	TakeProfitAt        time.Time         `json:"tp_at"`
 	BalanceChange       float64           `json:"balance_change"`
 	EscrowBalanceChange float64           `json:"escrow_balance_change"`
 	OrderGlobalUpdate   OrderGlobalUpdate `json:"order_global_update"`

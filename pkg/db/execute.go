@@ -181,13 +181,13 @@ func CloseOrder(client *supabase.Client, orderID string) (*UnsignedCloseOrderRes
 	return &order, nil
 }
 
-func SignCloseOrder(client *supabase.Client, orderId, signatureId string, remainingCollateral, payoutValue, feeValue, closePrice float64) (*SignedCloseOrderResponse, error) {
+func SignCloseOrder(client *supabase.Client, orderId, signatureId string, remainingCollateral, payoutValue, closeFee, closePrice float64) (*SignedCloseOrderResponse, error) {
 	params := map[string]interface{}{
 		"order_id":             orderId,
 		"signature_id":         signatureId,
 		"remaining_collateral": remainingCollateral,
 		"payout_value":         payoutValue,
-		"fee_value":            feeValue,
+		"close_fee_":           closeFee,
 		"close_price_":         closePrice,
 	}
 

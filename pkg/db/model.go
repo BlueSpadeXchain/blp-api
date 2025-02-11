@@ -1,5 +1,7 @@
 package db
 
+import "time"
+
 type UserResponse struct {
 	ID            string  `json:"id"`
 	UserID        string  `json:"userid"`
@@ -15,32 +17,33 @@ type UserResponse struct {
 }
 
 type OrderResponse struct {
-	ID                   string  `json:"id"`
-	UserID               string  `json:"userid"`
-	OrderType            string  `json:"order_type"`
-	Leverage             float64 `json:"leverage"`
-	Pair                 string  `json:"pair"`
-	PairId               string  `json:"pair_id"`
-	OrderStatus          string  `json:"status"`
-	Collateral           float64 `json:"collateral"`
-	EntryPrice           float64 `json:"entry_price"`
-	ClosePrice           float64 `json:"close_price"`
-	LiquidationPrice     float64 `json:"liq_price"`
-	MaxPrice             float64 `json:"max_price"`
-	MaxValue             float64 `json:"max_value"`
-	LimitPrice           float64 `json:"limit_price"`
-	StopLossPrice        float64 `json:"stop_price"`
-	TakeProfitPrice      float64 `json:"tp_price"`
-	TakeProfitValue      float64 `json:"tp_value"`
-	TakeProfitCollateral float64 `json:"tp_collateral"`
-	CreatedAt            string  `json:"created_at"`
-	SignedAt             string  `json:"signed_at"`
-	StartedAt            string  `json:"started_at"`
-	ModifiedAt           string  `json:"modified_at"`
-	EndedAt              string  `json:"ended_at"`
-	ProfitAndLoss        float64 `json:"pnl"`
-	OpenFee              float64 `json:"open_fee"`
-	CloseFee             float64 `json:"close_fee"`
+	ID                   string    `json:"id"`
+	UserID               string    `json:"userid"`
+	OrderType            string    `json:"order_type"`
+	Leverage             float64   `json:"leverage"`
+	Pair                 string    `json:"pair"`
+	PairId               string    `json:"pair_id"`
+	OrderStatus          string    `json:"status"`
+	Collateral           float64   `json:"collateral"`
+	EntryPrice           float64   `json:"entry_price"`
+	ClosePrice           float64   `json:"close_price"`
+	LiquidationPrice     float64   `json:"liq_price"`
+	MaxPrice             float64   `json:"max_price"`
+	MaxValue             float64   `json:"max_value"`
+	LimitPrice           float64   `json:"limit_price"`
+	StopLossPrice        float64   `json:"stop_price"`
+	TakeProfitPrice      float64   `json:"tp_price"`
+	TakeProfitValue      float64   `json:"tp_value"`
+	TakeProfitCollateral float64   `json:"tp_collateral"`
+	CreatedAt            time.Time `json:"created_at"`
+	SignedAt             time.Time `json:"signed_at"`
+	StartedAt            time.Time `json:"started_at"`
+	ModifiedAt           time.Time `json:"modified_at"`
+	EndedAt              time.Time `json:"ended_at"`
+	TakeProfitAt         time.Time `json:"tp_at"`
+	ProfitAndLoss        float64   `json:"pnl"`
+	OpenFee              float64   `json:"open_fee"`
+	CloseFee             float64   `json:"close_fee"`
 }
 
 type OrderAndUserResponse struct {
