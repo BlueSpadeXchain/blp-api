@@ -132,3 +132,39 @@ To get started with the API, follow these steps:
 - [live frontend:](https://bluespade-phi.vercel.app/) (https://bluespade-phi.vercel.app/
 - [live homepage:](https://bluespade.xyz) (https://bluespade.xyz
 - [live api:](https://blp-api-vercel.vercel.app/api/) https://blp-api-vercel.vercel.app/api/
+
+## Position math
+
+```
+	openFee := collateral * leverage * dynamicLeverageFee(leverage)
+	effectiveCollateral := collateral - openFee
+  effectiveLeverage := leverage * (collateral/ effectiveCollateral)
+
+	// Calculate liquidation price
+	switch params.PositionType {
+	case "long":
+		liqPrice = markPrice * (1 - (1 / effectiveLeverage))
+		maxProfitPrice = markPrice * (1 + 10/leverage)
+	case "short":
+		liqPrice = markPrice * (1 + (1 / effectiveLeverage))
+		maxProfitPrice = markPrice * (1 - 10/leverage)
+	default:
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid position type: %v", params.PositionType))
+	}
+```
+
+$ DynamicLeverageFee = \frac{BaseFee}{(1 + ScalingFactor \times Log(Leverage)}$
+
+$ openFee = Collateral \times Leverage \times DynamicLeverageFee $
+
+$ Collateral_{eff} = Collateral - openFee $
+
+$ Leverage_{eff} = Leverage \times \frac{Collateral}{Collateral_{eff}} $
+
+$ Liquidation_{L} = mark \times (1 - \frac{1}{Leverage_{eff}}) $
+
+$ Maximum_{L} = mark \times (1 + \frac{10}{Leverage}) $
+
+$ Liquidation_{S} = mark \times (1 + \frac{1}{Leverage_{eff}}) $
+
+$ Maximum_{S} = mark \times (1 - \frac{10}{Leverage}) $
