@@ -62,9 +62,9 @@ func SignOrder(client *supabase.Client, orderId string) (*SignOrderResponse, err
 		"order_id": orderId,
 	}
 
-	utils.LogInfo("sign_order2 params", utils.StringifyStructFields(params, ""))
+	utils.LogInfo("sign_order params", utils.StringifyStructFields(params, ""))
 
-	response := client.Rpc("sign_order2", "estimate", params)
+	response := client.Rpc("sign_order", "estimate", params)
 
 	var supabaseError SupabaseError
 	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
@@ -87,7 +87,7 @@ func SignOrder(client *supabase.Client, orderId string) (*SignOrderResponse, err
 func CreateOrder(
 	client *supabase.Client,
 	userId, orderType, pair, pairId string,
-	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitValue, takeProfitCollateral float64) (*UnsignedCreateOrderResponse, error) {
+	leverage, collateral, entryPrice, liquidationPrice, maxPrice, limitPrice, stopLossPrice, takeProfitPrice, takeProfitValue, takeProfitCollateral, openFee float64) (*UnsignedCreateOrderResponse, error) {
 	// Convert chainID, block, and depositNonce to string for TEXT type in the database
 	params := map[string]interface{}{
 		"user_id":     userId,
@@ -99,6 +99,7 @@ func CreateOrder(
 		"entry_price": entryPrice,
 		"liq_price":   liquidationPrice,
 		"max_price":   maxPrice,
+		"open_fee":    openFee,
 	}
 
 	if limitPrice != 0 {
@@ -115,9 +116,9 @@ func CreateOrder(
 		params["tp_collateral"] = takeProfitCollateral
 	}
 
-	utils.LogInfo("create_order2 params", utils.StringifyStructFields(params, ""))
+	utils.LogInfo("create_order params", utils.StringifyStructFields(params, ""))
 
-	response := client.Rpc("create_order2", "exact", params)
+	response := client.Rpc("create_order", "exact", params)
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError
@@ -190,10 +191,10 @@ func SignCloseOrder(client *supabase.Client, orderId, signatureId string, remain
 		"close_price_":         closePrice,
 	}
 
-	utils.LogInfo("signed_close_order2 params", utils.StringifyStructFields(params, ""))
+	utils.LogInfo("signed_close_order params", utils.StringifyStructFields(params, ""))
 
 	// Execute the RPC call
-	response := client.Rpc("signed_close_order2", "exact", params)
+	response := client.Rpc("signed_close_order", "exact", params)
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError

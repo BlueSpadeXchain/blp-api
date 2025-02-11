@@ -39,6 +39,8 @@ type OrderResponse struct {
 	ModifiedAt           string  `json:"modified_at"`
 	EndedAt              string  `json:"ended_at"`
 	ProfitAndLoss        float64 `json:"pnl"`
+	OpenFee              float64 `json:"open_fee"`
+	CloseFee             float64 `json:"close_fee"`
 }
 
 type OrderAndUserResponse struct {
