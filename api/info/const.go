@@ -4,7 +4,18 @@ import "fmt"
 
 const Version string = "BLP API v0.0.5"
 
-var Pairs []string = []string{"ethusd", "btcusd"}
+var Pairs []string = []string{
+	"ethusd",
+	"btcusd",
+	"moodengusd",
+	"bnbusd",
+	"solusd",
+	"dogeusd",
+	"suiusd",
+	"trumpusd",
+	"bonkusd",
+	"pnutusd",
+	"usdjpy"}
 
 var PairIds []string = []string{
 	"ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
@@ -16,7 +27,8 @@ var PairIds []string = []string{
 	"23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744",
 	"879551021853eec7a7dc827578e8e69da7e4fa8148339aa0d3d5296405be4b1a",
 	"72b021217ca3fe68922a19aaf990109cb9d84e9ad004b4d2025ad6f529314419",
-	"116da895807f81f6b5c5f01b109376e7f6834dc8b51365ab7cdfa66634340e54"}
+	"116da895807f81f6b5c5f01b109376e7f6834dc8b51365ab7cdfa66634340e54",
+	"ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52"}
 
 var PairAndIds []Pair = []Pair{
 	{Pair: "ethusd", PairId: "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace"},
@@ -29,6 +41,7 @@ var PairAndIds []Pair = []Pair{
 	{Pair: "trumpusd", PairId: "879551021853eec7a7dc827578e8e69da7e4fa8148339aa0d3d5296405be4b1a"},
 	{Pair: "bonkusd", PairId: "72b021217ca3fe68922a19aaf990109cb9d84e9ad004b4d2025ad6f529314419"},
 	{Pair: "pnutusd", PairId: "116da895807f81f6b5c5f01b109376e7f6834dc8b51365ab7cdfa66634340e54"},
+	{Pair: "usdjpy", PairId: "ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52"},
 }
 
 var pairIdMap = map[string]string{
@@ -52,6 +65,8 @@ var pairIdMap = map[string]string{
 	"usdbonk":    "72b021217ca3fe68922a19aaf990109cb9d84e9ad004b4d2025ad6f529314419",
 	"pnutusd":    "116da895807f81f6b5c5f01b109376e7f6834dc8b51365ab7cdfa66634340e54",
 	"usdpnut":    "116da895807f81f6b5c5f01b109376e7f6834dc8b51365ab7cdfa66634340e54",
+	"jpyusd":     "ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52",
+	"usdjpy":     "ef2c98c804ba503c6a707e38be4dfbb16683775f195b091252bf24693042fd52",
 }
 
 func getPairId(pairString string) (string, error) {
