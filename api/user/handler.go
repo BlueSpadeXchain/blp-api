@@ -59,9 +59,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = DespositRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		// todo
 		case "stake":
-			response, err = DespositRequest(r, supabaseClient)
+			response, err = StakeFromOnchainRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "stake-balance":
+			response, err = StakeFromBalanceRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "stake-blu":
+			response, err = StakeBluRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "user-data":
