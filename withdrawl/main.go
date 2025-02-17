@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	WithdrawHandler "github.com/BlueSpadeXchain/withdrawl/api/withdrawl"
+	WithdrawHandler "github.com/BlueSpadeXchain/blp-api/withdrawl/api/withdrawl"
 	"github.com/sirupsen/logrus"
 
 	"github.com/joho/godotenv"
