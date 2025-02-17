@@ -1,4 +1,4 @@
-package escrow
+package withdrawHandler
 
 import (
 	"context"
@@ -26,6 +26,10 @@ type EventData struct {
 	Value  string `json:"value"`
 	TxHash string `json:"tx_hash"`
 }
+
+// we need to listen to the db for new unstake events
+// attempt to execute onchain
+// with receipt, call user api with tx_hash and statuts success/failure
 
 func StartListener(rpcURL string, chainId string) {
 	if chainId == "" {
@@ -128,7 +132,7 @@ func StartListener(rpcURL string, chainId string) {
 				body, _ := ConvertStructToQuery(request)
 				logrus.Info("body: ", body)
 				logrus.Warning("deposit was triggered")
-				sendRequest(userApi, "deposit", body)
+				sendRequest(userApi, "unstake_receipt", body)
 
 			case StakingDepositEventSig:
 				// need to check if asset is blu, address(0), or

@@ -230,3 +230,66 @@ func GetSignatureHash(client *supabase.Client, signatureId string) (*GetSignatur
 
 	return &order, nil
 }
+
+func GetStakesByUserId(client *supabase.Client, userId string, stakeType string, limit float64) (*StakesAndUserResponse, error) {
+	params := map[string]interface{}{
+		"p_user_id": userId,
+	}
+
+	if stakeType != "" {
+		params["p_stake_type"] = stakeType
+	}
+
+	if limit != 0 {
+		params["p_limit"] = limit
+	}
+
+	utils.LogInfo("get_stakes_by_user_id params", utils.StringifyStructFields(params, ""))
+
+	response := client.Rpc("get_stakes_by_user_id", "exact", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	var stakes StakesAndUserResponse
+	if err := json.Unmarshal([]byte(response), &stakes); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	return &stakes, nil
+}
+
+func GetStakesByUserAddress(client *supabase.Client, walletAddress, walletType, stakeType string, limit float64) (*StakesAndUserResponse, error) {
+	params := map[string]interface{}{
+		"wallet_addr": walletAddress,
+		"wallet_t":    walletType,
+	}
+
+	if stakeType != "" {
+		params["p_stake_type"] = stakeType
+	}
+
+	if limit != 0 {
+		params["p_limit"] = limit
+	}
+
+	utils.LogInfo("get_stakes_by_user_address params", utils.StringifyStructFields(params, ""))
+
+	response := client.Rpc("get_stakes_by_user_address", "exact", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	var stakes StakesAndUserResponse
+	if err := json.Unmarshal([]byte(response), &stakes); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	return &stakes, nil
+}

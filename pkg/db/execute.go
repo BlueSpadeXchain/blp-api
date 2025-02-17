@@ -341,3 +341,190 @@ func AddUserDeposit(client *supabase.Client, walletAddress, walletType, chainID,
 
 	return nil
 }
+
+func ProcessDepositAndStake(client *supabase.Client, walletAddress, walletType, chainID, block, blockHash, txHash, sender, depositNonce, asset, amount, value, stakeType string) error {
+	// Convert chainID, block, and depositNonce to string for TEXT type in the database
+	params := map[string]interface{}{
+		"wallet_addr":      walletAddress,
+		"wallet_t":         walletType,
+		"chain":            chainID,
+		"blk":              block,
+		"blk_hash":         blockHash,
+		"tx_hash":          txHash,
+		"sndr":             sender,
+		"deposit_nonce":    depositNonce,
+		"asset_addr":       asset,
+		"amt":              amount,
+		"val":              value,
+		"stake_type_param": stakeType,
+	}
+
+	utils.LogInfo("process_deposit_and_stake params", utils.StringifyStructFields(params, ""))
+
+	response := client.Rpc("process_deposit_and_stake", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return fmt.Errorf("db error: failed to execute add_user_deposit for wallet %v", walletAddress)
+	}
+
+	return nil
+}
+
+// CREATE OR REPLACE FUNCTION process_deposit_and_stake(
+// 	-- Deposit parameters
+// 	wallet_addr VARCHAR,
+// 	wallet_t VARCHAR,
+// 	chain TEXT,
+// 	blk TEXT,
+// 	blk_hash VARCHAR,
+// 	tx_hash VARCHAR,
+// 	sndr VARCHAR,
+// 	deposit_nonce TEXT,
+// 	asset_addr VARCHAR,
+// 	amt TEXT,
+// 	val NUMERIC(78, 9),
+// 	-- Stake parameters
+// 	stake_type_param stake_type
+// )
+
+// withdraw function and signed withdraw function the generation of teh signing needs to be over
+// the amount + withdraw id
+// and validate the user/signer balance
+// also affect the user frozen balance
+func Withdraw(client *supabase.Client, withdrawId string, amount float64) (*UnsignedWithdrawResponse, error) {
+	params := map[string]interface{}{
+		"withdraw_id": withdrawId,
+		"amount":      amount,
+	}
+
+	utils.LogInfo("unsigned_withdraw params", utils.StringifyStructFields(params, ""))
+
+	// Execute the RPC call
+	response := client.Rpc("unsigned_withdraw", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute unsigned_wthdraw for withdraw ID %v", withdrawId)
+	}
+
+	var withdrawl UnsignedWithdrawResponse
+	err := json.Unmarshal([]byte(response), &withdrawl)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &withdrawl, nil
+}
+
+func SignWithdraw(client *supabase.Client, withdrawId, signatureId string) (*SignedWithdrawResponse, error) {
+	params := map[string]interface{}{
+		"withdraw_id":  withdrawId,
+		"signature_id": signatureId,
+	}
+
+	utils.LogInfo("signed_withdraw params", utils.StringifyStructFields(params, ""))
+
+	// Execute the RPC call
+	response := client.Rpc("signed_withdraw", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute signed_withdraw for withdraw ID %v", withdrawId)
+	}
+
+	var withdrawl SignedWithdrawResponse
+	err := json.Unmarshal([]byte(response), &withdrawl)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &withdrawl, nil
+}
+
+func Unstake(client *supabase.Client, userId, stakeType string, amount float64) (*ProcessUnstakeResponse, error) {
+	params := map[string]interface{}{
+		"user_id":    userId,
+		"stake_type": stakeType,
+		"amount":     amount,
+	}
+
+	utils.LogInfo("process_unstake_deposit params", utils.StringifyStructFields(params, ""))
+
+	// Execute the RPC call
+	response := client.Rpc("process_unstake_deposit", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute process_unstake_deposit for user ID %v", userId)
+	}
+
+	var unstake ProcessUnstakeResponse
+	err := json.Unmarshal([]byte(response), &unstake)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &unstake, nil
+}
+
+func UpdateWithdrawlStatus(client *supabase.Client, withdrawlId, status, txHash string) (*ProcessUnstakeResponse, error) {
+	params := map[string]interface{}{
+		"p_withdrawl_id": withdrawlId,
+		"p_status":       status,
+		"p_tx_hash":      txHash,
+	}
+
+	utils.LogInfo("update_withdrawal_status params", utils.StringifyStructFields(params, ""))
+
+	// Execute the RPC call
+	response := client.Rpc("update_withdrawal_status", "exact", params)
+
+	// Check for any Supabase errors
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// If no response or an error, return
+	if response == "" {
+		return nil, fmt.Errorf("db error: failed to execute update_withdrawal_status for withdraw ID %v", withdrawlId)
+	}
+
+	var unstake ProcessUnstakeResponse
+	err := json.Unmarshal([]byte(response), &unstake)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
+	}
+
+	return &unstake, nil
+}

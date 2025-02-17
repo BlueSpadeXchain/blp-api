@@ -132,6 +132,7 @@ To get started with the API, follow these steps:
 - [live frontend:](https://bluespade-phi.vercel.app/) https://bluespade-phi.vercel.app/
 - [live homepage:](https://bluespade.xyz) https://bluespade.xyz
 - [live api:](https://blp-api-vercel.vercel.app/api/) https://blp-api-vercel.vercel.app/api/
+- [testnet usdc:](https://holesky.etherscan.io/address/0x31ab43583dD532FE8E00a521322338a8E2bB0C4B#writeContract) https://holesky.etherscan.io/address/0x31ab43583dD532FE8E00a521322338a8E2bB0C4B#writeContract
 
 ## Position math
 
