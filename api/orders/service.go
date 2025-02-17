@@ -2,11 +2,8 @@ package orderHandler
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	user "github.com/BlueSpadeXchain/blp-api/api/user"
@@ -87,45 +84,6 @@ func GetOrderByIdRequest(r *http.Request, supabaseClient *supabase.Client, param
 	return order, nil
 }
 
-// GetCurrentPriceData queries the API for the current price data for the given pair ID.
-func GetCurrentPriceData(pair string) (PriceUpdate, error) {
-	baseURL := "https://hermes.pyth.network/v2/updates/price/latest"
-
-	// Create the request with query parameters
-	reqURL, err := url.Parse(baseURL)
-	if err != nil {
-		return PriceUpdate{}, fmt.Errorf("error parsing URL: %v", err)
-	}
-
-	q := reqURL.Query()
-	q.Add("ids[]", pair)
-	reqURL.RawQuery = q.Encode()
-
-	resp, err := http.Get(reqURL.String())
-	if err != nil {
-		return PriceUpdate{}, fmt.Errorf("error making HTTP request: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return PriceUpdate{}, fmt.Errorf("API returned non-200 status code: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return PriceUpdate{}, fmt.Errorf("error reading response body: %v", err)
-	}
-
-	var response Response
-	if err := json.Unmarshal(body, &response); err != nil {
-		return PriceUpdate{}, fmt.Errorf("error unmarshaling response JSON: %v", err)
-	}
-
-	LogResponse(reqURL.String(), response.Parsed[0])
-
-	return response.Parsed[0], nil
-}
-
 func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*CreateOrderRequestParams) (interface{}, error) {
 	var params *CreateOrderRequestParams
 	var markPrice, entryPrice, limitPrice, stopLossPrice, tpPrice, tpValue, tpCollateral, maxProfitPrice, liqPrice float64 // init as zero
@@ -156,7 +114,7 @@ func UnsignedCreateOrderRequest(r *http.Request, supabaseClient *supabase.Client
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
-	priceData, err := GetCurrentPriceData(pairId)
+	priceData, err := utils.GetCurrentPriceData(pairId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
@@ -573,7 +531,7 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 		return nil, utils.ErrInternal(err.Error())
 	}
 
-	priceData, err := GetCurrentPriceData(order_.PairId)
+	priceData, err := utils.GetCurrentPriceData(order_.PairId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}

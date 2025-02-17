@@ -126,12 +126,13 @@ To get started with the API, follow these steps:
 
 ## BLP important links
 
-- [hosted git backend:](https://github.com/FudgyDRS/blp-api-vercel) (https://github.com/FudgyDRS/blp-api-vercel
-- [hosted git frontend:](https://github.com/johdipin/bluespade) (https://github.com/johdipin/bluespade
-- [live aux frontend:](https://blp-frontend-ten.vercel.app/) (https://blp-frontend-ten.vercel.app/
-- [live frontend:](https://bluespade-phi.vercel.app/) (https://bluespade-phi.vercel.app/
-- [live homepage:](https://bluespade.xyz) (https://bluespade.xyz
+- [hosted git backend:](https://github.com/FudgyDRS/blp-api-vercel) https://github.com/FudgyDRS/blp-api-vercel
+- [hosted git frontend:](https://github.com/johdipin/bluespade) https://github.com/johdipin/bluespade
+- [live aux frontend:](https://blp-frontend-ten.vercel.app/) https://blp-frontend-ten.vercel.app/
+- [live frontend:](https://bluespade-phi.vercel.app/) https://bluespade-phi.vercel.app/
+- [live homepage:](https://bluespade.xyz) https://bluespade.xyz
 - [live api:](https://blp-api-vercel.vercel.app/api/) https://blp-api-vercel.vercel.app/api/
+- [testnet usdc:](https://holesky.etherscan.io/address/0x31ab43583dD532FE8E00a521322338a8E2bB0C4B#writeContract) https://holesky.etherscan.io/address/0x31ab43583dD532FE8E00a521322338a8E2bB0C4B#writeContract
 
 ## Position math
 

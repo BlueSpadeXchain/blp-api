@@ -3,17 +3,20 @@ package db
 import "time"
 
 type UserResponse struct {
-	ID            string  `json:"id"`
-	UserID        string  `json:"userid"`
-	WalletAddress string  `json:"wallet_address"`
-	WalletType    string  `json:"wallet_type"`
-	Balance       float64 `json:"balance"`
-	PerpBalance   float64 `json:"perp_balance"`
-	EscrowBalance float64 `json:"escrow_balance"`
-	StakeBalance  float64 `json:"stake_balance"`
-	FrozenBalance float64 `json:"frozen_balance"`
-	TotalBalance  float64 `json:"total_balance"`
-	CreatedAt     string  `json:"created_at"`
+	ID              string  `json:"id"`
+	UserID          string  `json:"userid"`
+	WalletAddress   string  `json:"wallet_address"`
+	WalletType      string  `json:"wallet_type"`
+	Balance         float64 `json:"balance"`
+	PerpBalance     float64 `json:"perp_balance"`
+	EscrowBalance   float64 `json:"escrow_balance"`
+	FrozenBalance   float64 `json:"frozen_balance"`
+	BluStakeBalance float64 `json:"blu_stake_balance"`
+	BlpStakeBalance float64 `json:"blp_stake_balance"`
+	BluStakePending float64 `json:"blu_stake_pending"`
+	BlpStakePending float64 `json:"blp_stake_pending"`
+	TotalBalance    float64 `json:"total_balance"`
+	CreatedAt       string  `json:"created_at"`
 }
 
 type OrderResponse struct {
@@ -44,6 +47,19 @@ type OrderResponse struct {
 	ProfitAndLoss        float64   `json:"pnl"`
 	OpenFee              float64   `json:"open_fee"`
 	CloseFee             float64   `json:"close_fee"`
+}
+
+type StakeResponse struct {
+	ID        string  `json:"id"`
+	UserID    string  `json:"userid"`
+	StakeType string  `json:"stake_type"`
+	Amount    float64 `json:"amount"`
+	CreatedAt string  `json:"created_at"`
+}
+
+type StakesAndUserResponse struct {
+	Stakes []StakeResponse `json:"stakes"`
+	User   UserResponse    `json:"user"`
 }
 
 type OrderAndUserResponse struct {
@@ -124,4 +140,54 @@ type GlobalStateResponse struct {
 
 type GetSignatureHashResponse struct {
 	Hash string `json:"signature_hash"`
+}
+
+type UnsignedWithdrawResponse struct {
+	WitdhrawId    string `json:"withdraw_id"`
+	SignatureId   string `json:"signature_id"`
+	SignatureHash string `json:"signature_hash"`
+	ExpiryTime    string `json:"expiry_time"`
+}
+
+type SignedWithdrawResponse struct {
+	Withdraw     WithdrawResponse `json:"withdraw"`
+	IsValid      bool             `json:"is_valid"`
+	ErrorMessage string           `json:"error_message"`
+}
+
+type WithdrawResponse struct {
+	ID            string    `json:"id"`
+	UserID        string    `json:"userid"`
+	Amount        float64   `json:"amount"`
+	TokenType     float64   `json:"total_type"`
+	Status        string    `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	TxHash        string    `json:"tx_hash"`
+	WalletAddress string    `json:"wallet_address"`
+}
+
+type StakeDepositResponse struct {
+	ID        string    `json:"id"`
+	Userid    string    `json:"userid"`
+	StakeType string    `json:"stake_type"`
+	Amount    float64   `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type PendingWithdrawlResponse struct {
+	ID            string    `json:"id"`
+	Userid        string    `json:"userid"`
+	Amount        float64   `json:"amount"`
+	TokenType     string    `json:"token_type"`
+	Status        float64   `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	TxHash        string    `json:"tx_hash"`
+	WalletAddress string    `json:"wallet_address"`
+}
+
+type ProcessUnstakeResponse struct {
+	StakeDeposit     StakeDepositResponse     `json:"stake_deposit"`
+	PendingWithdrawl PendingWithdrawlResponse `json:"pending_withdrawl"`
 }

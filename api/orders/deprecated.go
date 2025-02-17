@@ -257,7 +257,7 @@ func UnsignedOrderRequest(r *http.Request, supabaseClient *supabase.Client, para
 		return nil, err
 	}
 
-	priceData, err := GetCurrentPriceData(pair)
+	priceData, err := utils.GetCurrentPriceData(pair)
 	if err != nil {
 		return nil, err
 	}

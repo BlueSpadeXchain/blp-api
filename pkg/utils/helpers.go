@@ -6,8 +6,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/big"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"runtime"
@@ -366,4 +368,43 @@ func RemoveHex0xPrefix(hex string) string {
 		return hex[2:]
 	}
 	return hex
+}
+
+// GetCurrentPriceData queries the API for the current price data for the given pair ID.
+func GetCurrentPriceData(pair string) (PriceUpdate, error) {
+	baseURL := "https://hermes.pyth.network/v2/updates/price/latest"
+
+	// Create the request with query parameters
+	reqURL, err := url.Parse(baseURL)
+	if err != nil {
+		return PriceUpdate{}, fmt.Errorf("error parsing URL: %v", err)
+	}
+
+	q := reqURL.Query()
+	q.Add("ids[]", pair)
+	reqURL.RawQuery = q.Encode()
+
+	resp, err := http.Get(reqURL.String())
+	if err != nil {
+		return PriceUpdate{}, fmt.Errorf("error making HTTP request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return PriceUpdate{}, fmt.Errorf("API returned non-200 status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return PriceUpdate{}, fmt.Errorf("error reading response body: %v", err)
+	}
+
+	var response Response
+	if err := json.Unmarshal(body, &response); err != nil {
+		return PriceUpdate{}, fmt.Errorf("error unmarshaling response JSON: %v", err)
+	}
+
+	LogResponse(reqURL.String(), response.Parsed[0])
+
+	return response.Parsed[0], nil
 }

@@ -88,26 +88,28 @@ protocol orders take priority
 - [x] ts example script
 - [x] poke test db cron job
 - [ ] withdrawls
-  - [ ] table log
+  - [x] table log
   - [ ] kill switch
-  - [ ] backend functions
-  - [ ] db functions
+  - [x] backend functions
+  - [x] db functions
 - [ ] staking
   - [x] blu distribution
   - [x] "mint" usdc
-  - [ ] backend function
-  - [ ] db function
+  - [x] backend function
+  - [x] db function
   - [ ] frontend staking
   - [ ] staking metrics (APR etc)
-  - [ ] seperate staking for blu (token) and blp (protocol liquidity)
-  - [ ] blp buying both contract and frontend
+  - [x] seperate staking for blu (token) and blp (protocol liquidity)
+  - [x] blp buying both contract and frontend
+  - [ ] get distributions history
+  - [ ] get user distributions history
 - [ ] metrics
   - [x] test snapshot history
   - [ ] gui for historical data
   - [x] create cron job to snapshot data (hourly or daily)
-  - [ ] create snapshot api
+  - [x] create snapshot api
   - [ ] test metrics
-  - [ ] emphsis of fees and volume
+  - [x] emphsis of fees and volume
   - [ ] daily active users: frontend telemetry, wallets per order, connected wallets, number of orders
   - [ ] pair specific volume, liquidity, and volume 
 - [x] change liquidations from 100% to 95%
@@ -130,6 +132,14 @@ protocol orders take priority
   - [ ] api function
   - [ ] test script (ts)
 - [ ] local test enviornment auto-init script
+- [ ] 10x max leverage on specific position
+- [ ] prevent ordrs max payout to exceed global liquidity
+  - [ ] create a global used liquidiity value (available/utilized liquidity)
+- [ ] need to add base mainnet to rpc const list
+- [ ] test escrow withdraw function
+- [ ] test escrow transfer function (used by withdraw?)
+- [ ] bot to convert funds into stable reserves, need to log this (global state variable)
+
 
 ### Edge cases TODO
 - [ ] the use connects a wallet but needs to associate it with a different account

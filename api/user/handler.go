@@ -51,17 +51,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		switch query.Get("query") {
-		case "withdraw":
-			response, err = WithdrawRequest(r, supabaseClient)
-			HandleResponse(w, r, supabaseClient, response, err)
-			return
 		case "deposit":
 			response, err = DespositRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		// todo
 		case "stake":
-			response, err = DespositRequest(r, supabaseClient)
+			response, err = StakeRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "eoa-stake":
+			response, err = EoaStakeRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "unstake":
+			response, err = UnstakeRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "user-data":
@@ -93,14 +96,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		// todo
 		case "get-stakes-by-user-id":
-			response, err = GetDepositsByUserIdRequest(r, supabaseClient)
+			response, err = GetStakesByUserIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		// todo
 		case "get-stakes-by-user-address":
-			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
+			response, err = GetStakesByUserAddressRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "withdraw":
+			response, err = UnsignedWithdrawRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
+		case "sign-withdraw":
+			response, err = SignedWithdrawRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		// case "get-orders-by-user-id":
