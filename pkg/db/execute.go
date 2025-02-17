@@ -294,17 +294,17 @@ func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) 
 		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
 
-	var users []UserResponse
+	var users UserResponse
 	err := json.Unmarshal([]byte(response), &users)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
 	}
 
-	if len(users) == 0 {
-		return nil, fmt.Errorf("db error: %v of type %v could not create a user", walletAddress, walletType)
-	}
+	// if len(users) == 0 {
+	// 	return nil, fmt.Errorf("db error: %v of type %v could not create a user", walletAddress, walletType)
+	// }
 
-	return &users[0], nil
+	return &users, nil
 }
 
 func AddUserDeposit(client *supabase.Client, walletAddress, walletType, chainID, block, blockHash, txHash, sender, depositNonce, asset, amount, value string) error {
