@@ -20,6 +20,9 @@ import (
 	"github.com/supabase-community/supabase-go"
 )
 
+type WithdrawBluRequestResponse struct {
+}
+
 func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*WithdrawBluRequestParams) (interface{}, error) {
 	var params *WithdrawBluRequestParams
 	if len(parameters) > 0 {
@@ -41,7 +44,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		defer cancel()
 
 		// Log start of processing
-		utils.LogInfo("Starting blockchain withdrawal", fmt.Sprintf("UnstakeID: %s, Amount: %s", params.PendingWithdrawlId, params.Amount))
+		utils.LogInfo("Starting blockchain withdrawal", fmt.Sprintf("UnstakeID: %s, Amount: %s", params.PendingWithdrawalId, params.Amount))
 
 		// Get environment variables based on mainnet flag
 		isMainnetEnabled := os.Getenv("MAINNET_ENABLED") == "true"
@@ -61,7 +64,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		client, err := ethclient.Dial(rpcURL)
 		if err != nil {
 			utils.LogError("failed to connect to blockchain", err.Error())
-			db.UpdateWithdrawlStatus(supabaseClient, params.PendingWithdrawlId, "failure", "Blockchain connection failed")
+			db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "failure", "Blockchain connection failed")
 			return
 		}
 
@@ -72,7 +75,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		parsedEscrowABI, err := abi.JSON(strings.NewReader(escrowContractABI))
 		if err != nil {
 			utils.LogError("failed to parse escrow ABI", err.Error())
-			db.UpdateWithdrawlStatus(supabaseClient, params.PendingWithdrawlId, "failure", "Contract configuration error")
+			db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "failure", "Contract configuration error")
 			return
 		}
 
@@ -80,7 +83,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		amountFloat, err := strconv.ParseFloat(params.Amount, 64)
 		if err != nil {
 			utils.LogError("invalid amount format", err.Error())
-			db.UpdateWithdrawlStatus(supabaseClient, params.PendingWithdrawlId, "FAILED", "Invalid amount format")
+			db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "FAILED", "Invalid amount format")
 			return
 		}
 
@@ -92,7 +95,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		bluAddr := common.HexToAddress(bluAddress)
 
 		// Execute the transfer function
-		txHash, err := ExecuteFunction(
+		txResponse, err := ExecuteFunction(
 			*client,
 			escrowAddr,
 			parsedEscrowABI,
@@ -105,36 +108,33 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 
 		if err != nil {
 			utils.LogError("blockchain transaction failed", err.Error())
-			updateWithdrawStatusInDB(supabaseClient, params.PendingWithdrawlId, "FAILED", fmt.Sprintf("Transaction failed: %v", err))
+			db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "failure", "")
 			return
 		}
-
-		// Update status with transaction hash
-		updateWithdrawStatusInDB(supabaseClient, params.PendingWithdrawlId, "PENDING", txHash.String())
 
 		// Wait for up to 90 seconds for receipt
 		receiptCtx, receiptCancel := context.WithTimeout(ctx, 90*time.Second)
 		defer receiptCancel()
 
-		receipt, err := waitForReceipt(receiptCtx, client, txHash)
+		receipt, err := waitForReceipt(receiptCtx, client, txResponse.TxHash)
 		if err != nil {
 			if err == context.DeadlineExceeded {
 				utils.LogInfo("Transaction pending", "Receipt not available within timeout")
-				// Keep status as PENDING
+				db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "failure", txResponse.TxHash.String())
 			} else {
 				utils.LogError("failed to get receipt", err.Error())
-				updateWithdrawStatusInDB(supabaseClient, params.UnstakeID, "FAILED", "Failed to verify transaction")
+				db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "failure", txResponse.TxHash.String())
 			}
 			return
 		}
 
 		// Check receipt status
 		if receipt.Status == 1 {
-			updateWithdrawStatusInDB(supabaseClient, params.UnstakeID, "COMPLETED", txHash.String())
-			utils.LogInfo("Blockchain withdrawal completed", fmt.Sprintf("UnstakeID: %s, TxHash: %s", params.UnstakeID, txHash.String()))
+			db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "success", txResponse.TxHash.String())
+			utils.LogInfo("Blockchain withdrawal completed", fmt.Sprintf("UnstakeID: %s, TxHash: %s", params.PendingWithdrawalId, txResponse.TxHash.String()))
 		} else {
-			updateWithdrawStatusInDB(supabaseClient, params.UnstakeID, "FAILED", "Transaction reverted on chain")
-			utils.LogError("transaction reverted", txHash.String())
+			db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "failure", txResponse.TxHash.String())
+			utils.LogError("transaction reverted", txResponse.TxHash.String())
 		}
 	}()
 
@@ -142,7 +142,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 	return map[string]string{
 		"status":     "ACCEPTED",
 		"message":    "Withdrawal process initiated",
-		"unstake_id": params.UnstakeID,
+		"unstake_id": params.PendingWithdrawalId,
 	}, nil
 }
 

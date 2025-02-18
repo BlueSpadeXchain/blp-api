@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/google/uuid"
@@ -294,17 +295,17 @@ func GetOrCreateUser(client *supabase.Client, walletAddress, walletType string) 
 		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
 	}
 
-	var users []UserResponse
+	var users UserResponse
 	err := json.Unmarshal([]byte(response), &users)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
 	}
 
-	if len(users) == 0 {
-		return nil, fmt.Errorf("db error: %v of type %v could not create a user", walletAddress, walletType)
-	}
+	// if len(users) == 0 {
+	// 	return nil, fmt.Errorf("db error: %v of type %v could not create a user", walletAddress, walletType)
+	// }
 
-	return &users[0], nil
+	return &users, nil
 }
 
 func AddUserDeposit(client *supabase.Client, walletAddress, walletType, chainID, block, blockHash, txHash, sender, depositNonce, asset, amount, value string) error {
@@ -422,13 +423,13 @@ func Withdraw(client *supabase.Client, withdrawId string, amount float64) (*Unsi
 		return nil, fmt.Errorf("db error: failed to execute unsigned_wthdraw for withdraw ID %v", withdrawId)
 	}
 
-	var withdrawl UnsignedWithdrawResponse
-	err := json.Unmarshal([]byte(response), &withdrawl)
+	var withdrawal UnsignedWithdrawResponse
+	err := json.Unmarshal([]byte(response), &withdrawal)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
 	}
 
-	return &withdrawl, nil
+	return &withdrawal, nil
 }
 
 func SignWithdraw(client *supabase.Client, withdrawId, signatureId string) (*SignedWithdrawResponse, error) {
@@ -454,26 +455,27 @@ func SignWithdraw(client *supabase.Client, withdrawId, signatureId string) (*Sig
 		return nil, fmt.Errorf("db error: failed to execute signed_withdraw for withdraw ID %v", withdrawId)
 	}
 
-	var withdrawl SignedWithdrawResponse
-	err := json.Unmarshal([]byte(response), &withdrawl)
+	var withdrawal SignedWithdrawResponse
+	err := json.Unmarshal([]byte(response), &withdrawal)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
 	}
 
-	return &withdrawl, nil
+	return &withdrawal, nil
 }
 
 func Unstake(client *supabase.Client, userId, stakeType string, amount float64) (*ProcessUnstakeResponse, error) {
 	params := map[string]interface{}{
-		"user_id":    userId,
-		"stake_type": stakeType,
-		"amount":     amount,
+		"p_user_id":    userId,
+		"p_stake_type": stakeType,
+		"p_amount":     amount,
 	}
 
 	utils.LogInfo("process_unstake_deposit params", utils.StringifyStructFields(params, ""))
 
 	// Execute the RPC call
 	response := client.Rpc("process_unstake_deposit", "exact", params)
+	response = strings.ReplaceAll(response, "+00:00", "Z")
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError
@@ -496,11 +498,16 @@ func Unstake(client *supabase.Client, userId, stakeType string, amount float64) 
 	return &unstake, nil
 }
 
-func UpdateWithdrawlStatus(client *supabase.Client, withdrawlId, status, txHash string) (*ProcessUnstakeResponse, error) {
+func UpdateWithdrawalStatus(client *supabase.Client, withdrawalId, status, txHash string) (*ProcessUnstakeResponse, error) {
 	params := map[string]interface{}{
-		"p_withdrawl_id": withdrawlId,
-		"p_status":       status,
-		"p_tx_hash":      txHash,
+		"p_withdrawal_id": withdrawalId,
+		"p_tx_hash":       txHash,
+	}
+
+	if status != "success" || txHash == "" {
+		params["p_status"] = "failure"
+	} else {
+		params["p_status"] = "success"
 	}
 
 	utils.LogInfo("update_withdrawal_status params", utils.StringifyStructFields(params, ""))
@@ -517,7 +524,7 @@ func UpdateWithdrawlStatus(client *supabase.Client, withdrawlId, status, txHash 
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute update_withdrawal_status for withdraw ID %v", withdrawlId)
+		return nil, fmt.Errorf("db error: failed to execute update_withdrawal_status for withdraw ID %v", withdrawalId)
 	}
 
 	var unstake ProcessUnstakeResponse

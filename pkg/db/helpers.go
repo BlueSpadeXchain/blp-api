@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"reflect"
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/supabase-community/supabase-go"
@@ -37,4 +38,11 @@ func LogPanic(client *supabase.Client, message string, context interface{}) erro
 	}
 
 	return nil
+}
+
+// Helper function to check if UserResponse contains empty data
+func isEmptyUserResponse(user *UserResponse) bool {
+	// Adjust this according to your UserResponse structure
+	// This is just an example - you'll need to modify based on your actual structure
+	return user == nil || (reflect.ValueOf(*user).IsZero() || reflect.DeepEqual(*user, UserResponse{}))
 }

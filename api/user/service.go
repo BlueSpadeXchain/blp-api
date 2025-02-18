@@ -705,11 +705,18 @@ func GetStakesByUserAddressRequest(r *http.Request, supabaseClient *supabase.Cli
 }
 
 type WithdrawBluRequestParams struct {
-	PendingWithdrawlId string `query:"pending-withdrawl-id"`
-	Amount             string `query:"amount"`
-	WalletAddress      string `query:"wallet-address"`
+	PendingWithdrawalId string `query:"pending-withdrawal-id"`
+	Amount              string `query:"amount"`
+	WalletAddress       string `query:"wallet-address"`
 }
 
+//	type UnstakeRequestParams struct {
+//		UserId    string `query:"user-id"`
+//		Amount    string `query:"amount"`
+//		StakeType string `query:"stake-type"` // BLU or BLP
+//		ChainId   string `query:"chain-id" optional:"true"`
+//		Receiver  string `query:"receiver" optional:"true"`
+//	}
 func UnstakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnstakeRequestParams) (interface{}, error) {
 	var params *UnstakeRequestParams
 
@@ -751,9 +758,9 @@ func UnstakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters
 		return nil, utils.ErrInternal(fmt.Sprintf("invalid stake-type found: %v", stakeType))
 	}
 
-	withdrawlApi := os.Getenv("WITHDRAW_API")
-	if withdrawlApi == "" {
-		logrus.Fatal("WITHDRAW_API is not set")
+	withdrawalApi := os.Getenv("WITHDRAWAL_API")
+	if withdrawalApi == "" {
+		logrus.Fatal("WITHDRAWAL_API is not set")
 	}
 
 	unstakeResponse, err := db.Unstake(supabaseClient, params.UserId, stakeType, amount)
@@ -761,24 +768,24 @@ func UnstakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters
 		return nil, utils.ErrInternal(fmt.Sprintf("db unstake error: %v", err.Error()))
 	}
 
-	if unstakeResponse.PendingWithdrawl.TokenType == "BLU" {
+	if unstakeResponse.PendingWithdrawal.TokenType == "BLU" {
 		// call the withdraw api
 		request := &WithdrawBluRequestParams{
-			PendingWithdrawlId: unstakeResponse.PendingWithdrawl.ID,
-			Amount:             fmt.Sprint(unstakeResponse.PendingWithdrawl.Amount),
-			WalletAddress:      unstakeResponse.PendingWithdrawl.WalletAddress,
+			PendingWithdrawalId: unstakeResponse.PendingWithdrawal.ID,
+			Amount:              fmt.Sprint(unstakeResponse.PendingWithdrawal.Amount),
+			WalletAddress:       unstakeResponse.PendingWithdrawal.WalletAddress,
 		}
 		body, _ := ConvertStructToQuery(request)
 		logrus.Info("body: ", body)
 		logrus.Warning("withdraw-blu was triggered")
-		sendRequest(withdrawlApi, "withdraw-blu", body)
+		sendRequest(withdrawalApi, "withdraw-blu", body)
 	}
 
 	// the api upon a good response, will call on chain
 	return unstakeResponse, nil
 }
 
-// this is specifically for withdrawling from the users balance, thus the user must exist and have a balance
+// this is specifically for withdrawaling from the users balance, thus the user must exist and have a balance
 func UnsignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedWithdrawRequestParams) (interface{}, error) {
 	var params *UnsignedWithdrawRequestParams
 
