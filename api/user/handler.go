@@ -13,7 +13,7 @@ import (
 )
 
 // handler handles signed and unsigned user requests
-// login (maybe?), user data, escrow (withdrawls/deposits), staking
+// login (maybe?), user data, escrow (withdrawals/deposits), staking
 // 	deposits will have to be signed by our blockchain listener (logged regardless, to catch missed payout history)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -87,12 +87,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		// todo
-		case "get-withdrawls-by-user-id":
+		case "get-withdrawals-by-user-id":
 			response, err = GetDepositsByUserIdRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		// todo
-		case "get-withdrawls-by-user-address":
+		case "get-withdrawals-by-user-address":
 			response, err = GetDepositsByUserAddressRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return

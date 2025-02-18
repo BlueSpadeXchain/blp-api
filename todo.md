@@ -87,7 +87,7 @@ protocol orders take priority
 - [x] loadbalancer
 - [x] ts example script
 - [x] poke test db cron job
-- [ ] withdrawls
+- [ ] withdrawals
   - [x] table log
   - [ ] kill switch
   - [x] backend functions

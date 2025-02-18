@@ -26,17 +26,17 @@ func GetUserByUserId(client *supabase.Client, userId string) (*UserResponse, err
 	}
 	fmt.Printf("\n inside of getuser: %v", response)
 
-	var users []UserResponse
+	var users UserResponse
 	if err := json.Unmarshal([]byte(response), &users); err != nil {
 		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
 	}
 	fmt.Printf("\n inside of getuser: %v", users)
 
-	if len(users) == 0 {
-		return nil, fmt.Errorf("no user found for userId: %s", userId)
-	}
+	// if len(users) == 0 {
+	// 	return nil, fmt.Errorf("no user found for userId: %s", userId)
+	// }
 
-	return &users[0], nil
+	return &users, nil
 }
 
 func GetDepositsByUserId(client *supabase.Client, userId string) (*[]DepositResponse, error) {

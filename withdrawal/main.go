@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	WithdrawHandler "github.com/BlueSpadeXchain/blp-api/withdrawl/api/withdrawl"
+	WithdrawHandler "github.com/BlueSpadeXchain/blp-api/withdrawal/api/withdrawal"
 	"github.com/sirupsen/logrus"
 
 	"github.com/joho/godotenv"
@@ -73,7 +73,7 @@ func main() {
 
 	logrus.Warning("program starting in debug mode...")
 
-	http.HandleFunc("/api/withdrawl", WithdrawHandler.Handler)
+	http.HandleFunc("/api/withdrawal", WithdrawHandler.Handler)
 
 	log.Println("Starting server on :8081")
 	log.Fatal(http.ListenAndServe(":8081", nil))
@@ -90,8 +90,8 @@ func main() {
 // 	"os"
 // 	"time"
 
-// 	"github.com/BlueSpadeXchain/blp-api/withdrawl/pkg/db"
-// 	"github.com/BlueSpadeXchain/blp-api/withdrawl/withdrawl"
+// 	"github.com/BlueSpadeXchain/blp-api/withdrawal/pkg/db"
+// 	"github.com/BlueSpadeXchain/blp-api/withdrawal/withdrawal"
 // 	"github.com/joho/godotenv"
 // 	"github.com/sirupsen/logrus"
 // 	"github.com/supabase-community/supabase-go"
@@ -207,12 +207,12 @@ func main() {
 
 // 	logrus.Info("Supabase listener starting...")
 
-// 	jsonRpc, err := withdrawl.GetChainRpc(*chainIdFlag)
+// 	jsonRpc, err := withdrawal.GetChainRpc(*chainIdFlag)
 // 	if err != nil {
 // 		logrus.Error(err)
 // 		return
 // 	}
 
-// 	withdrawl.StartListener(jsonRpc, *chainIdFlag)
+// 	withdrawal.StartListener(jsonRpc, *chainIdFlag)
 
 // }
