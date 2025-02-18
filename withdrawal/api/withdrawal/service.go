@@ -52,11 +52,11 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 
 		if isMainnetEnabled {
 			rpcURL = os.Getenv("MAINNET_JSON_RPC")
-			escrowAddress = os.Getenv("MAINNET_ESCROW_ADDRESS")
+			escrowAddress = os.Getenv("MAINNET_ESCROW")
 			bluAddress = os.Getenv("MAINNET_BLU")
 		} else {
 			rpcURL = os.Getenv("TESTNET_JSON_RPC")
-			escrowAddress = os.Getenv("TESTNET_ESCROW_ADDRESS")
+			escrowAddress = os.Getenv("TESTNET_ESCROW")
 			bluAddress = os.Getenv("TESTNET_BLU")
 		}
 
@@ -94,6 +94,14 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		escrowAddr := common.HexToAddress(escrowAddress)
 		bluAddr := common.HexToAddress(bluAddress)
 
+		utils.LogInfo("execute_transfer_function params", utils.StringifyStructFields(map[string]interface{}{
+			"function":       "transfer",
+			"escrow_address": escrowAddr,
+			"user_address":   userAddress,
+			"blu_address":    bluAddr,
+			"amount_in_wei":  amountInWei.String(),
+		}, ""))
+
 		// Execute the transfer function
 		txResponse, err := ExecuteFunction(
 			*client,
@@ -105,6 +113,7 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 			bluAddr,     // Asset address
 			amountInWei, // Amount in wei
 		)
+		//10 00000000 0000000000
 
 		if err != nil {
 			utils.LogError("blockchain transaction failed", err.Error())
