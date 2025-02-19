@@ -379,37 +379,16 @@ func ProcessDepositAndStake(client *supabase.Client, walletAddress, walletType, 
 	return nil
 }
 
-// CREATE OR REPLACE FUNCTION process_deposit_and_stake(
-// 	-- Deposit parameters
-// 	wallet_addr VARCHAR,
-// 	wallet_t VARCHAR,
-// 	chain TEXT,
-// 	blk TEXT,
-// 	blk_hash VARCHAR,
-// 	tx_hash VARCHAR,
-// 	sndr VARCHAR,
-// 	deposit_nonce TEXT,
-// 	asset_addr VARCHAR,
-// 	amt TEXT,
-// 	val NUMERIC(78, 9),
-// 	-- Stake parameters
-// 	stake_type_param stake_type
-// )
-
-// withdraw function and signed withdraw function the generation of teh signing needs to be over
-// the amount + withdraw id
-// and validate the user/signer balance
-// also affect the user frozen balance
-func Withdraw(client *supabase.Client, withdrawId string, amount float64) (*UnsignedWithdrawResponse, error) {
+func Withdraw(client *supabase.Client, userId string, amount float64) (*UnsignedWithdrawalResponse, error) {
 	params := map[string]interface{}{
-		"withdraw_id": withdrawId,
-		"amount":      amount,
+		"p_user_id": userId,
+		"p_amount":  amount,
 	}
 
-	utils.LogInfo("unsigned_withdraw params", utils.StringifyStructFields(params, ""))
+	utils.LogInfo("unsigned_create_withdraw params", utils.StringifyStructFields(params, ""))
 
 	// Execute the RPC call
-	response := client.Rpc("unsigned_withdraw", "exact", params)
+	response := client.Rpc("unsigned_create_withdraw", "exact", params)
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError
@@ -420,10 +399,10 @@ func Withdraw(client *supabase.Client, withdrawId string, amount float64) (*Unsi
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute unsigned_wthdraw for withdraw ID %v", withdrawId)
+		return nil, fmt.Errorf("db error: failed to execute unsigned_create_withdraw for user ID %v", userId)
 	}
 
-	var withdrawal UnsignedWithdrawResponse
+	var withdrawal UnsignedWithdrawalResponse
 	err := json.Unmarshal([]byte(response), &withdrawal)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)
@@ -432,16 +411,16 @@ func Withdraw(client *supabase.Client, withdrawId string, amount float64) (*Unsi
 	return &withdrawal, nil
 }
 
-func SignWithdraw(client *supabase.Client, withdrawId, signatureId string) (*SignedWithdrawResponse, error) {
+func SignWithdraw(client *supabase.Client, withdrawalId, signatureId string) (*SignedWithdrawalResponse, error) {
 	params := map[string]interface{}{
-		"withdraw_id":  withdrawId,
-		"signature_id": signatureId,
+		"p_withdrawal_id": withdrawalId,
+		"p_signature_id":  signatureId,
 	}
 
-	utils.LogInfo("signed_withdraw params", utils.StringifyStructFields(params, ""))
+	utils.LogInfo("signed_create_withdraw params", utils.StringifyStructFields(params, ""))
 
 	// Execute the RPC call
-	response := client.Rpc("signed_withdraw", "exact", params)
+	response := client.Rpc("signed_create_withdraw", "exact", params)
 
 	// Check for any Supabase errors
 	var supabaseError SupabaseError
@@ -452,10 +431,10 @@ func SignWithdraw(client *supabase.Client, withdrawId, signatureId string) (*Sig
 
 	// If no response or an error, return
 	if response == "" {
-		return nil, fmt.Errorf("db error: failed to execute signed_withdraw for withdraw ID %v", withdrawId)
+		return nil, fmt.Errorf("db error: failed to execute signed_create_withdraw for withdraw ID %v", withdrawalId)
 	}
 
-	var withdrawal SignedWithdrawResponse
+	var withdrawal SignedWithdrawalResponse
 	err := json.Unmarshal([]byte(response), &withdrawal)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling db.rpc response: %v", err)

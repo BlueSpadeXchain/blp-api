@@ -113,18 +113,18 @@ type GetStakesByUserAddressRequestParams struct {
 	Limit         string `query:"limit" optional:"true"`
 }
 
-type UnsignedWithdrawRequestParams struct {
+type UnsignedWithdrawalRequestParams struct {
 	UserId   string `query:"user-id"`
 	Amount   string `query:"amount"`
 	ChainId  string `query:"chain-id" optional:"true"`
 	Receiver string `query:"receiver" optional:"true"`
 }
-type SignedWithdrawRequestParams struct {
-	WithdrawId  string `query:"withdraw-id"`
-	SignatureId string `query:"signature-id"`
-	R           string `query:"r" optional:"true"`
-	S           string `query:"s" optional:"true"`
-	V           string `query:"v" optional:"true"`
+type SignedWithdrawalRequestParams struct {
+	WithdrawalId string `query:"withdrawal-id"`
+	SignatureId  string `query:"signature-id"`
+	R            string `query:"r" optional:"true"`
+	S            string `query:"s" optional:"true"`
+	V            string `query:"v" optional:"true"`
 }
 
 type UnstakeRequestParams struct {

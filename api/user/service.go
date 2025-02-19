@@ -3,6 +3,7 @@ package userHandler
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math"
 	"math/big"
 	"net/http"
@@ -785,14 +786,16 @@ func UnstakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters
 	return unstakeResponse, nil
 }
 
-// this is specifically for withdrawaling from the users balance, thus the user must exist and have a balance
-func UnsignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedWithdrawRequestParams) (interface{}, error) {
-	var params *UnsignedWithdrawRequestParams
+// users will get request to withdrawal
+// sign
+// called signed withdrawal, which will create the pending withdrawal and then onchain api does it's thing
+func UnsignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*UnsignedWithdrawalRequestParams) (interface{}, error) {
+	var params *UnsignedWithdrawalRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &UnsignedWithdrawRequestParams{}
+		params = &UnsignedWithdrawalRequestParams{}
 	}
 
 	if r != nil {
@@ -822,13 +825,13 @@ func UnsignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, p
 	return response, nil
 }
 
-func SignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedWithdrawRequestParams) (interface{}, error) {
-	var params *SignedWithdrawRequestParams
+func SignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*SignedWithdrawalRequestParams) (interface{}, error) {
+	var params *SignedWithdrawalRequestParams
 
 	if len(parameters) > 0 {
 		params = parameters[0]
 	} else {
-		params = &SignedWithdrawRequestParams{}
+		params = &SignedWithdrawalRequestParams{}
 	}
 
 	if r != nil {
@@ -878,13 +881,51 @@ func SignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, par
 		// }
 	}
 
-	cancelResponse, err := db.SignWithdraw(supabaseClient, params.WithdrawId, params.SignatureId)
+	withdrawalAndUser, err := db.GetPendingWithdrawalById(supabaseClient, params.WithdrawalId)
 	if err != nil {
 		return nil, utils.ErrInternal(err.Error())
 	}
-	if !cancelResponse.IsValid {
-		utils.LogError("sign cancel order error", err.Error())
-		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", cancelResponse.ErrorMessage))
+
+	//withdrawalAndUser.User.Balance <
+	log.Printf("withdrawalAndUser.Withdrawal.TokenType: %v", withdrawalAndUser.Withdrawal.TokenType)
+
+	switch withdrawalAndUser.Withdrawal.TokenType {
+	case "BLP":
+		if withdrawalAndUser.User.Balance < withdrawalAndUser.Withdrawal.Amount {
+			return nil, utils.ErrInternal(fmt.Sprintf("insufficent balance: %v", withdrawalAndUser.User.Balance))
+		}
+	default:
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid token-type found: %v", withdrawalAndUser.Withdrawal.TokenType))
 	}
-	return cancelResponse, nil
+
+	withdrawalApi := os.Getenv("WITHDRAWAL_API")
+	if withdrawalApi == "" {
+		logrus.Fatal("WITHDRAWAL_API is not set")
+	}
+
+	// this is required for the withdrawal api to both trying to transfer
+	withdrawalRequest, err := db.SignWithdraw(supabaseClient, params.WithdrawalId, params.SignatureId)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+	if !withdrawalRequest.IsValid {
+		utils.LogError("sign cancel order error", err.Error())
+		return nil, utils.ErrInternal(fmt.Sprintf("invalid sig-s value: %v", withdrawalRequest.ErrorMessage))
+	}
+
+	if withdrawalRequest.Withdrawal.TokenType == "BLP" {
+		// call the withdraw api
+		request := &WithdrawBluRequestParams{
+			PendingWithdrawalId: withdrawalRequest.Withdrawal.ID,
+			Amount:              fmt.Sprint(withdrawalRequest.Withdrawal.Amount),
+			WalletAddress:       withdrawalRequest.Withdrawal.WalletAddress,
+		}
+		body, _ := ConvertStructToQuery(request)
+		logrus.Info("body: ", body)
+		logrus.Warning("withdraw-blu was triggered")
+		sendRequest(withdrawalApi, "withdraw-blu", body)
+	}
+
+	// the api upon a good response, will call on chain
+	return withdrawalRequest, nil
 }

@@ -64,8 +64,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = WithdrawBluRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
-		case "withdraw-blp": // used when withdrawing balance
-			response, err = WithdrawBlpRequest(r, supabaseClient)
+		case "withdraw-balance": // used when withdrawing balance
+			response, err = WithdrawBalanceRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		default:
