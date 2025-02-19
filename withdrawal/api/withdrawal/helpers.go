@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -93,19 +94,32 @@ type LogData struct {
 }
 
 func ExecuteFunction(client ethclient.Client, contractAddress common.Address, parsedABI abi.ABI, methodName string, value *big.Int, args ...interface{}) (response *ExecuteResponse, err error) {
+	log.Printf("Starting ExecuteFunction for method: %s", methodName)
+
 	chainId, err := client.ChainID(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get chain ID: %w", err)
 	}
+	log.Printf("Chain ID: %s", chainId.String())
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get gas price: %w", err)
 	}
+	log.Printf("Suggested gas price: %s", gasPrice.String())
 
 	privateKey, relayAddress, err := Key2Ecdsa(os.Getenv("EVM_PRIVATE_KEY"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get private key: %w", err)
+	}
+	log.Printf("Relay address: %s", relayAddress.Hex())
+
+	// Get account balance
+	balance, err := client.BalanceAt(context.Background(), relayAddress, nil)
+	if err != nil {
+		log.Printf("WARNING: Could not get balance: %v", err)
+	} else {
+		log.Printf("Account balance: %s wei", balance.String())
 	}
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
@@ -118,31 +132,56 @@ func ExecuteFunction(client ethclient.Client, contractAddress common.Address, pa
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack ABI: %w", err)
 	}
+	log.Printf("Packed data length: %d bytes", len(data))
+	log.Printf("Method name: %s, Value: %s", methodName, value.String())
+
+	initialGasEstimate := uint64(100000)
 
 	callMsg := ethereum.CallMsg{
 		From:     relayAddress,
 		To:       &contractAddress,
-		Gas:      0,
+		Gas:      initialGasEstimate,
 		GasPrice: gasPrice,
 		Value:    value,
 		Data:     data,
 	}
 
+	// Try simulating the contract call
+	log.Printf("Simulating contract call...")
 	_, err = client.CallContract(context.Background(), callMsg, nil)
 	if err != nil {
-		return nil, fmt.Errorf("contract call failed: %w", err)
+		return nil, fmt.Errorf("contract call simulation failed: %w", err)
 	}
+	log.Printf("Contract call simulation successful")
 
 	nonce, err := client.PendingNonceAt(context.Background(), relayAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nonce: %w", err)
 	}
+	log.Printf("Nonce: %d", nonce)
 
+	log.Printf("Estimating gas...")
 	estimatedGas, err := client.EstimateGas(context.Background(), callMsg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to estimate gas: %w", err)
 	}
+	log.Printf("Estimated gas: %d", estimatedGas)
+
+	// Calculate total cost
 	gasLimit := 120 * estimatedGas / 100
+	log.Printf("Gas limit (120%% of estimate): %d", gasLimit)
+
+	totalGasCost := new(big.Int).Mul(gasPrice, big.NewInt(int64(gasLimit)))
+	log.Printf("Total gas cost: %s wei", totalGasCost.String())
+
+	totalCost := new(big.Int).Add(totalGasCost, value)
+	log.Printf("Total transaction cost (gas + value): %s wei", totalCost.String())
+
+	if balance != nil {
+		if balance.Cmp(totalCost) < 0 {
+			log.Printf("WARNING: Account balance (%s) is less than total cost (%s)", balance.String(), totalCost.String())
+		}
+	}
 
 	tx := types.NewTransaction(nonce, contractAddress, value, gasLimit, gasPrice, data)
 	signedTx, err := types.SignTx(tx, types.LatestSignerForChainID(chainId), privateKey)
@@ -150,10 +189,15 @@ func ExecuteFunction(client ethclient.Client, contractAddress common.Address, pa
 		return nil, fmt.Errorf("failed to sign transaction: %w", err)
 	}
 
+	log.Printf("Sending transaction...")
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
+		gasFeeCap := new(big.Int).Mul(gasPrice, big.NewInt(2)) // Example: double the gas price as a fee cap
+		log.Printf("Transaction failed. You might try with gasFeeCap of %s or lower gasLimit", gasFeeCap.String())
 		return nil, fmt.Errorf("failed to send transaction: %w", err)
 	}
+
+	log.Printf("Transaction sent successfully! Hash: %s", signedTx.Hash().Hex())
 
 	// Create response with transaction hash immediately
 	response = &ExecuteResponse{

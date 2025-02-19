@@ -293,3 +293,26 @@ func GetStakesByUserAddress(client *supabase.Client, walletAddress, walletType, 
 
 	return &stakes, nil
 }
+
+func GetPendingWithdrawalById(client *supabase.Client, withdrawalId string) (*WithdrawalAndUserResponse, error) {
+	params := map[string]interface{}{
+		"p_id": withdrawalId,
+	}
+
+	utils.LogInfo("get_pending_withdrawal_by_id params", utils.StringifyStructFields(params, ""))
+
+	response := client.Rpc("get_pending_withdrawal_by_id", "exact", params)
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	var withdrawalAndUser WithdrawalAndUserResponse
+	if err := json.Unmarshal([]byte(response), &withdrawalAndUser); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	return &withdrawalAndUser, nil
+}

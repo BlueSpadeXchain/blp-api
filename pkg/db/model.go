@@ -71,6 +71,11 @@ type OrderAndUserResponse struct {
 	User  UserResponse  `json:"user"`
 }
 
+type WithdrawalAndUserResponse struct {
+	Withdrawal WithdrawalResponse `json:"pending_withdrawal"`
+	User       UserResponse       `json:"user"`
+}
+
 type DepositResponse struct {
 	ID            string  `json:"id"`
 	UserID        string  `json:"userid"`
@@ -146,24 +151,24 @@ type GetSignatureHashResponse struct {
 	Hash string `json:"signature_hash"`
 }
 
-type UnsignedWithdrawResponse struct {
-	WitdhrawId    string `json:"withdraw_id"`
+type UnsignedWithdrawalResponse struct {
+	WithdrawalId  string `json:"pending_withdrawal_id"`
 	SignatureId   string `json:"signature_id"`
 	SignatureHash string `json:"signature_hash"`
 	ExpiryTime    string `json:"expiry_time"`
 }
 
-type SignedWithdrawResponse struct {
-	Withdraw     WithdrawResponse `json:"withdraw"`
-	IsValid      bool             `json:"is_valid"`
-	ErrorMessage string           `json:"error_message"`
+type SignedWithdrawalResponse struct {
+	Withdrawal   WithdrawalResponse `json:"pending_withdrawal"`
+	IsValid      bool               `json:"is_valid"`
+	ErrorMessage string             `json:"error_message"`
 }
 
-type WithdrawResponse struct {
+type WithdrawalResponse struct {
 	ID            string    `json:"id"`
 	UserID        string    `json:"userid"`
 	Amount        float64   `json:"amount"`
-	TokenType     float64   `json:"total_type"`
+	TokenType     string    `json:"token_type"`
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
