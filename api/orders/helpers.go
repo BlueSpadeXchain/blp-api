@@ -3,6 +3,8 @@ package orderHandler
 import (
 	"math"
 	"time"
+
+	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 )
 
 func validateOrderRequest() error {
@@ -84,7 +86,7 @@ func getPerHourFee() float64 {
 	return 0.0001
 }
 
-func dynamicUtilizationFee(startTimestamp time.Time, globalBorrowed, globalLiquidity float64) float64 {
+func dynamicUtilizationFee(startTimestamp db.CustomTime, globalBorrowed, globalLiquidity float64) float64 {
 	elapsedTime := time.Since(startTimestamp.UTC()).Seconds()
 
 	return getPerHourFee() * (elapsedTime / 3600) * globalBorrowed / globalLiquidity
