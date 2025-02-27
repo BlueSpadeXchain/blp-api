@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/BlueSpadeXchain/blp-api/pkg/db"
+	db "github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"

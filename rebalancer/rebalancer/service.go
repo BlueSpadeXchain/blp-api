@@ -77,7 +77,7 @@ func printProcessedOrder(order db.OrderResponse, orderUpdate db.OrderUpdate) {
 }
 
 // order type assumed (not checked) short/long
-func processOrderLongTakeProfit(globalBorrowed, globalLiquidity, payout, closeFee *float64, order *db.OrderResponse, orderUpdate *db.OrderUpdate) {
+func processOrderTakeProfit(globalBorrowed, globalLiquidity, payout, closeFee *float64, order *db.OrderResponse, orderUpdate *db.OrderUpdate) {
 	logrus.Info(fmt.Sprintf("processing %s take profit order", order.OrderType))
 
 	typeMultiplier := map[bool]float64{true: 1, false: -1}[order.OrderType == "long"]
@@ -339,7 +339,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 				if order.OrderStatus == "pending" {
 					// profits
 					if order.TakeProfitPrice <= markPrice && order.TakeProfitValue > 0 {
-						processOrderLongTakeProfit(&globalBorrowed, &globalLiquidity, &payout, &closeFee, &order, &orderUpdate_)
+						processOrderTakeProfit(&globalBorrowed, &globalLiquidity, &payout, &closeFee, &order, &orderUpdate_)
 					}
 					if order.MaxPrice <= markPrice {
 						processOrderFill(&globalBorrowed, &globalLiquidity, &borrowed, &payout, &closeFee, &order, &orderUpdate_)
@@ -367,7 +367,7 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 				if order.OrderStatus == "pending" {
 					// profits
 					if order.TakeProfitPrice >= markPrice && order.TakeProfitValue > 0 {
-						processOrderLongTakeProfit(&globalBorrowed, &globalLiquidity, &payout, &closeFee, &order, &orderUpdate_)
+						processOrderTakeProfit(&globalBorrowed, &globalLiquidity, &payout, &closeFee, &order, &orderUpdate_)
 					}
 					if order.MaxPrice >= markPrice {
 						processOrderFill(&globalBorrowed, &globalLiquidity, &borrowed, &payout, &closeFee, &order, &orderUpdate_)
