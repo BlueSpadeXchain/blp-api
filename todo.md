@@ -136,9 +136,13 @@ protocol orders take priority
 - [ ] prevent ordrs max payout to exceed global liquidity
   - [ ] create a global used liquidiity value (available/utilized liquidity)
 - [ ] need to add base mainnet to rpc const list
-- [ ] test escrow withdraw function
-- [ ] test escrow transfer function (used by withdraw?)
+- [x] test escrow withdraw function
+- [x] test escrow transfer function (used by withdraw?)
 - [ ] bot to convert funds into stable reserves, need to log this (global state variable)
+- [ ] alert system for errors, preferably log/email
+- [ ] need further stratify error logs to address bigger issues
+- [ ] missing env variable fatal error message response
+- [ ] need the escrow to use multiple rpc connections (in the event one fails)
 
 
 ### Edge cases TODO
@@ -179,3 +183,4 @@ protocol orders take priority
 - [ ] reduce function/table access privalages
 - [ ] docker image to run tests
 - [ ] metamask snap for liquidity and blu staking
+- [ ] admin gui for non-code editing settings

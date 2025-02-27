@@ -12,13 +12,14 @@ var chainRpcMap = map[string]string{
 	"0x03106A": "ws://testnet-rpc.bitlayer.org",
 	"200810":   "ws://testnet-rpc.bitlayer.org",
 	"0x4268":   "ws://ethereum-holesky-rpc.publicnode.com",
-	"17000":    "wss://ethereum-holesky-rpc.publicnode.com",
+	//"17000":    "wss://ethereum-holesky-rpc.publicnode.com",
+	"17000":    "wss://holy-hidden-cherry.ethereum-holesky.quiknode.pro/05f81ada01537c3719d152120293816b3835f642",
 	"0xAA36A7": "ws://ethereum-sepolia.publicnode.com",
 	"11155111": "ws://ethereum-sepolia.publicnode.com",
 	"0xF35A":   "ws://rpc.devnet.citrea.xyz",
 	"62298":    "ws://rpc.devnet.citrea.xyz",
 	"998":      "ws://api.hyperliquid-testnet.xyz/evm",
-	"8543":     "",
+	"8453":     "wss://holy-hidden-cherry.base-mainnet.quiknode.pro/05f81ada01537c3719d152120293816b3835f642",
 }
 
 func GetChainRpc(chainId string) (string, error) {
