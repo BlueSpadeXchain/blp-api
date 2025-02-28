@@ -6,12 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net/http"
 	"net/url"
 	"os"
 	"reflect"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -52,23 +54,65 @@ func SignData(hash []byte, pk *ecdsa.PrivateKey) (string, error) {
 	return hex.EncodeToString(signature), err
 }
 
-func sendRequest(api, query, body string) {
-	url := fmt.Sprintf("%v?query=%v&%v", api, query, body)
+// func sendRequest(api, query, body string) {
+// 	url := fmt.Sprintf("%v?query=%v&%v", api, query, body)
+// 	logrus.Info("Request forwarded: ", url)
+
+// 	req, err := http.NewRequest("GET", url, nil)
+// 	if err != nil {
+// 		logrus.Error("Request creation error: ", err)
+// 		return
+// 	}
+
+// 	go func() {
+// 		client := &http.Client{}
+// 		resp, err := client.Do(req)
+// 		if err != nil {
+// 			logrus.Error("Request error: ", err)
+// 			return
+// 		}
+// 		defer resp.Body.Close()
+// 	}()
+// }
+
+func sendRequest(api, query, body string) error {
+	// Properly URL encode the query parameters
+	queryEncoded := url.QueryEscape(query)
+	bodyEncoded := url.QueryEscape(body)
+
+	url := fmt.Sprintf("%s?query=%s&%s", api, queryEncoded, bodyEncoded)
 	logrus.Info("Request forwarded: ", url)
 
-	req, err := http.NewRequest("GET", url, nil)
+	// Create a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		logrus.Error("Request creation error: ", err)
-		return
+		return err
 	}
 
-	client := &http.Client{}
+	// Add headers that might be needed
+	req.Header.Add("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		logrus.Error("Request error: ", err)
-		return
+		return err
 	}
 	defer resp.Body.Close()
+
+	// Read and log response status and body for debugging
+	statusCode := resp.StatusCode
+	responseBody, _ := io.ReadAll(resp.Body)
+	logrus.Infof("Response status: %d, body: %s", statusCode, string(responseBody))
+
+	return nil
 }
 
 // ExecuteResponse represents the structured response from an on-chain function execution
