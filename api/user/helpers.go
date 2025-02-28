@@ -62,40 +62,14 @@ func ConvertStructToQuery(params interface{}) (string, error) {
 	return query.Encode(), nil
 }
 
-func sendRequest(api, query, body string, r *http.Request) {
+func sendRequest(api, query, body string) {
 	url := fmt.Sprintf("%v?query=%v&%v", api, query, body)
 	logrus.Info("Request forwarded: ", url)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.Get(url)
 	if err != nil {
 		logrus.Error("Request creation error: ", err)
 		return
 	}
 
-	// Get the host from the incoming request
-	if r != nil {
-		// Construct the full origin with scheme and host
-		scheme := "http"
-		if r.TLS != nil {
-			scheme = "https"
-		}
-		origin := fmt.Sprintf("%s://%s", scheme, r.Host)
-
-		// Set the Origin header dynamically
-		req.Header.Set("Origin", origin)
-		logrus.Info("Setting Origin header to: ", origin)
-	} else {
-		// Fallback if no request context is available
-		req.Header.Set("Origin", "http://localhost:8080")
-		logrus.Info("Using default Origin header: http://localhost:8080")
-	}
-
-	go func() {
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			logrus.Error("Request error: ", err)
-			return
-		}
-		defer resp.Body.Close()
-	}()
+	defer req.Body.Close()
 }
