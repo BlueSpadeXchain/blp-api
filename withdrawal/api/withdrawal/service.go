@@ -277,7 +277,7 @@ func WithdrawBalanceRequest(r *http.Request, supabaseClient *supabase.Client, pa
 		}
 
 		// Convert to wei (assuming 18 decimals)
-		amountInWei := toWei(amountFloat*0.997, 18)
+		amountInWei := toWei(amountFloat*0.997, 6)
 
 		// Get contract addresses
 		escrowAddr := common.HexToAddress(escrowAddress)
@@ -287,7 +287,7 @@ func WithdrawBalanceRequest(r *http.Request, supabaseClient *supabase.Client, pa
 			"function":       "transfer",
 			"escrow_address": escrowAddr,
 			"user_address":   userAddress,
-			"blu_address":    usdcAddr,
+			"usdc_address":   usdcAddr,
 			"amount_in_wei":  amountInWei.String(),
 		}, ""))
 
