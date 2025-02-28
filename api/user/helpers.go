@@ -62,7 +62,7 @@ func ConvertStructToQuery(params interface{}) (string, error) {
 	return query.Encode(), nil
 }
 
-func sendRequest(api, query, body string) {
+func sendRequest(api, query, body string, r *http.Request) {
 	url := fmt.Sprintf("%v?query=%v&%v", api, query, body)
 	logrus.Info("Request forwarded: ", url)
 	req, err := http.NewRequest("GET", url, nil)
@@ -71,10 +71,23 @@ func sendRequest(api, query, body string) {
 		return
 	}
 
-	// Add this line to set the Origin header
-	req.Header.Set("Origin", "http://localhost:8080")
-	// Or you could use Referer if you prefer
-	// req.Header.Set("Referer", "http://localhost:8080")
+	// Get the host from the incoming request
+	if r != nil {
+		// Construct the full origin with scheme and host
+		scheme := "http"
+		if r.TLS != nil {
+			scheme = "https"
+		}
+		origin := fmt.Sprintf("%s://%s", scheme, r.Host)
+
+		// Set the Origin header dynamically
+		req.Header.Set("Origin", origin)
+		logrus.Info("Setting Origin header to: ", origin)
+	} else {
+		// Fallback if no request context is available
+		req.Header.Set("Origin", "http://localhost:8080")
+		logrus.Info("Using default Origin header: http://localhost:8080")
+	}
 
 	go func() {
 		client := &http.Client{}

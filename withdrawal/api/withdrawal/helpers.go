@@ -62,13 +62,15 @@ func sendRequest(api, query, body string) {
 		return
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logrus.Error("Request error: ", err)
-		return
-	}
-	defer resp.Body.Close()
+	go func() {
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			logrus.Error("Request error: ", err)
+			return
+		}
+		defer resp.Body.Close()
+	}()
 }
 
 // ExecuteResponse represents the structured response from an on-chain function execution
