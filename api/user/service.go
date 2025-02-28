@@ -779,7 +779,7 @@ func UnstakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters
 		body, _ := ConvertStructToQuery(request)
 		logrus.Info("body: ", body)
 		logrus.Warning("withdraw-blu was triggered")
-		sendRequest(withdrawalApi, "withdraw-blu", body, r)
+		sendRequest(withdrawalApi, "withdraw-blu", body)
 	}
 
 	// the api upon a good response, will call on chain
@@ -923,7 +923,7 @@ func SignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, par
 		body, _ := ConvertStructToQuery(request)
 		logrus.Info("body: ", body)
 		logrus.Warning("withdraw-blu was triggered")
-		sendRequest(withdrawalApi, "withdraw-blu", body, r)
+		sendRequest(withdrawalApi, "withdraw-blu", body)
 	}
 
 	// the api upon a good response, will call on chain
