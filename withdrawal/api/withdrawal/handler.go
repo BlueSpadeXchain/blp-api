@@ -9,7 +9,6 @@ import (
 
 	"github.com/BlueSpadeXchain/blp-api/withdrawal/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/withdrawal/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -33,18 +32,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 	}()
-
-	callerUrl := r.Header.Get("Origin")
-	if callerUrl == "" {
-		callerUrl = r.Header.Get("Referer")
-	}
-
-	if callerUrl == "" || !isWhitelistedUrl(callerUrl) {
-		logrus.Error("Unauthorized caller", callerUrl)
-		logrus.Error("r:", r)
-		http.Error(w, "Unauthorized caller", http.StatusForbidden)
-		return
-	}
 
 	handlerWithCORS := utils.EnableCORS(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
