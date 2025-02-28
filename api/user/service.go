@@ -709,6 +709,7 @@ type WithdrawBluRequestParams struct {
 	PendingWithdrawalId string `query:"pending-withdrawal-id"`
 	Amount              string `query:"amount"`
 	WalletAddress       string `query:"wallet-address"`
+	ApiKey              string `query:"api-key"`
 }
 
 //	type UnstakeRequestParams struct {
@@ -775,6 +776,7 @@ func UnstakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters
 			PendingWithdrawalId: unstakeResponse.PendingWithdrawal.ID,
 			Amount:              fmt.Sprint(unstakeResponse.PendingWithdrawal.Amount),
 			WalletAddress:       unstakeResponse.PendingWithdrawal.WalletAddress,
+			ApiKey:              os.Getenv("WITHDRAWAL_API_KEY"),
 		}
 		body, _ := ConvertStructToQuery(request)
 		logrus.Info("body: ", body)
@@ -919,11 +921,12 @@ func SignedWithdrawRequest(r *http.Request, supabaseClient *supabase.Client, par
 			PendingWithdrawalId: withdrawalRequest.Withdrawal.ID,
 			Amount:              fmt.Sprint(withdrawalRequest.Withdrawal.Amount),
 			WalletAddress:       withdrawalRequest.Withdrawal.WalletAddress,
+			ApiKey:              os.Getenv("WITHDRAWAL_API_KEY"),
 		}
 		body, _ := ConvertStructToQuery(request)
 		logrus.Info("body: ", body)
-		logrus.Warning("withdraw-blu was triggered")
-		sendRequest(withdrawalApi, "withdraw-blu", body)
+		logrus.Warning("withdraw-balance was triggered")
+		sendRequest(withdrawalApi, "withdraw-balance", body)
 	}
 
 	// the api upon a good response, will call on chain

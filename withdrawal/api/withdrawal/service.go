@@ -37,6 +37,15 @@ func WithdrawBluRequest(r *http.Request, supabaseClient *supabase.Client, parame
 		}
 	}
 
+	withdrawalApiKey := os.Getenv("WITHDRAWAL_API_KEY")
+
+	if params.ApiKey != withdrawalApiKey {
+		err_ := utils.ErrInternal("invalid api key")
+		utils.LogError("", err_.Error())
+		db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "FAILED", "Invalid withdrawal api key")
+		return nil, err_
+	}
+
 	// Start blockchain processing in a goroutine
 	go func() {
 		// Setup context with 2-minute timeout
@@ -206,6 +215,15 @@ func WithdrawBalanceRequest(r *http.Request, supabaseClient *supabase.Client, pa
 			utils.LogError("failed to parse params", err.Error())
 			return nil, utils.ErrInternal(err.Error())
 		}
+	}
+
+	withdrawalApiKey := os.Getenv("WITHDRAWAL_API_KEY")
+
+	if params.ApiKey != withdrawalApiKey {
+		err_ := utils.ErrInternal("invalid api key")
+		utils.LogError("", err_.Error())
+		db.UpdateWithdrawalStatus(supabaseClient, params.PendingWithdrawalId, "FAILED", "Invalid withdrawal api key")
+		return nil, err_
 	}
 
 	// Start blockchain processing in a goroutine
