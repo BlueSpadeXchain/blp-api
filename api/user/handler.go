@@ -3,12 +3,15 @@ package userHandler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/supabase-community/supabase-go"
 )
 
@@ -128,6 +131,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = RemoveAuthorizedWalletRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "test":
+			callWithdrawalAPI()
+			return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))
@@ -153,4 +159,40 @@ func HandleResponse(w http.ResponseWriter, r *http.Request, supabaseClient *supa
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 	}
+}
+
+func callWithdrawalAPI() {
+	apiURL := "https://blp-api-vercel-production.up.railway.app/api/withdrawal"
+	logrus.Info("Making direct API call to: ", apiURL)
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		logrus.Error("Request creation error: ", err)
+		return
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+
+	// Create and execute the request
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logrus.Error("API request failed: ", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read and log the response
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logrus.Error("Failed to read response body: ", err)
+		return
+	}
+
+	logrus.Infof("API Response Status: %d", resp.StatusCode)
+	logrus.Infof("API Response Body: %s", string(respBody))
 }
