@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BlueSpadeXchain/blp-api/pkg/db"
-	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/BlueSpadeXchain/blp-api/withdrawal/pkg/db"
+	"github.com/BlueSpadeXchain/blp-api/withdrawal/pkg/utils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
