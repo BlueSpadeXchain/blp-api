@@ -59,6 +59,8 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 	if !ok {
 		return nil, utils.ErrInternal("Invalid amount format")
 	}
+	// MAINNET_BLU=7711C2219a436B48cA03f0740fB7EbA87C4a439e
+	// MAINNET_USDC=31ab43583dD532FE8E00a521322338a8E2bB0C4B
 
 	if utils.RemoveHex0xPrefix(params.Asset) == "0000000000000000000000000000000000000000" {
 		// If address(0), assume 18 decimals
@@ -68,9 +70,9 @@ func DespositRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 		usdValue.Mul(usdValue, big.NewFloat(3000)) // Multiply by 3000 USD
 		value = fmt.Sprintf("%.9f", usdValue)
 	} else {
-		// For non-address(0), assume 9 decimals
+		// For non-address(0), assume 6 decimals
 		// 1 * 10^9 tokens = 1 USD
-		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(9), nil) // 10^9
+		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(6), nil) // 10^9
 		usdValue := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(tokensPerUSD))
 		value = fmt.Sprintf("%.9f", usdValue)
 	}
