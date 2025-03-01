@@ -67,8 +67,10 @@ type OrderGlobalUpdate struct {
 	TotalTreasuryProfits  float64 `json:"total_treasury_profits"`
 	VaultBalance          float64 `json:"vault_balance"`
 	TotalVaultProfits     float64 `json:"total_vault_profits"`
-	TotalLiquidityRewards float64 `json:"total_liquidity_rewards"`
-	TotalStakeRewards     float64 `json:"total_stake_rewards"`
+	TotalBlpRewards       float64 `json:"total_blp_rewards"`
+	TotalBluRewards       float64 `json:"total_blu_rewards"`
+	CurrentBlpRewards     float64 `json:"current_blp_rewards"`
+	CurrentBluRewards     float64 `json:"current_blu_rewards"`
 }
 
 // OrderUpdate represents the PostgreSQL order_update type

@@ -105,8 +105,10 @@ func processOrderTakeProfit(globalBorrowed, globalLiquidity, payout, closeFee *f
 	orderUpdate.OrderGlobalUpdate.TotalTreasuryProfits += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.VaultBalance += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.TotalVaultProfits += *closeFee * 0.1
-	orderUpdate.OrderGlobalUpdate.TotalLiquidityRewards += *closeFee * 0.5
-	orderUpdate.OrderGlobalUpdate.TotalStakeRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.TotalBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.TotalBluRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.CurrentBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.CurrentBluRewards += *closeFee * 0.3
 
 	printProcessedOrder(*order, *orderUpdate)
 }
@@ -155,8 +157,10 @@ func processOrderFill(globalBorrowed, globalLiquidity, borrowed, payout, closeFe
 	orderUpdate.OrderGlobalUpdate.TotalTreasuryProfits += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.VaultBalance += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.TotalVaultProfits += *closeFee * 0.1
-	orderUpdate.OrderGlobalUpdate.TotalLiquidityRewards += *closeFee * 0.5
-	orderUpdate.OrderGlobalUpdate.TotalStakeRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.TotalBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.TotalBluRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.CurrentBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.CurrentBluRewards += *closeFee * 0.3
 
 	printProcessedOrder(*order, *orderUpdate)
 }
@@ -206,8 +210,10 @@ func processStopLoss(globalBorrowed, globalLiquidity, borrowed, payout, closeFee
 	orderUpdate.OrderGlobalUpdate.TotalTreasuryProfits += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.VaultBalance += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.TotalVaultProfits += *closeFee * 0.1
-	orderUpdate.OrderGlobalUpdate.TotalLiquidityRewards += *closeFee * 0.5
-	orderUpdate.OrderGlobalUpdate.TotalStakeRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.TotalBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.TotalBluRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.CurrentBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.CurrentBluRewards += *closeFee * 0.3
 
 	printProcessedOrder(*order, *orderUpdate)
 }
@@ -412,8 +418,10 @@ func processOrders(supabaseClient *supabase.Client, pairId string, priceMap []fl
 			OrderGlobalUpdate_.TotalTreasuryProfits += orderUpdate_.OrderGlobalUpdate.TotalTreasuryProfits
 			OrderGlobalUpdate_.VaultBalance += orderUpdate_.OrderGlobalUpdate.VaultBalance
 			OrderGlobalUpdate_.TotalVaultProfits += orderUpdate_.OrderGlobalUpdate.TotalVaultProfits
-			OrderGlobalUpdate_.TotalLiquidityRewards += orderUpdate_.OrderGlobalUpdate.TotalLiquidityRewards
-			OrderGlobalUpdate_.TotalStakeRewards += orderUpdate_.OrderGlobalUpdate.TotalStakeRewards
+			OrderGlobalUpdate_.TotalBlpRewards += orderUpdate_.OrderGlobalUpdate.TotalBlpRewards
+			OrderGlobalUpdate_.TotalBluRewards += orderUpdate_.OrderGlobalUpdate.TotalBluRewards
+			OrderGlobalUpdate_.CurrentBlpRewards += orderUpdate_.OrderGlobalUpdate.CurrentBlpRewards
+			OrderGlobalUpdate_.CurrentBluRewards += orderUpdate_.OrderGlobalUpdate.CurrentBlpRewards
 		}
 
 		orderUpdates_ = append(orderUpdates_, orderUpdate_)
