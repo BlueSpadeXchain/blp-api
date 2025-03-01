@@ -635,7 +635,7 @@ func StakeRequest(r *http.Request, supabaseClient *supabase.Client, parameters .
 	} else {
 		// For non-address(0), assume 9 decimals
 		// 1 * 10^9 tokens = 1 USD
-		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(9), nil) // 10^9
+		tokensPerUSD := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil) // 10^9
 		usdValue := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(tokensPerUSD))
 		value = fmt.Sprintf("%.9f", usdValue)
 	}
