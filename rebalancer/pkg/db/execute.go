@@ -11,7 +11,7 @@ import (
 
 func ProcessBatchOrders(client *supabase.Client, batchTimestamp time.Time, orderUpdates []OrderUpdate, globalUpdates OrderGlobalUpdate) error {
 	orderGlobalUpdateTuple := fmt.Sprintf(
-		"(%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f)",
+		"(%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f)",
 		globalUpdates.CurrentBorrowed,
 		globalUpdates.CurrentLiquidity,
 		globalUpdates.CurrentOrdersActive,
@@ -31,8 +31,10 @@ func ProcessBatchOrders(client *supabase.Client, batchTimestamp time.Time, order
 		globalUpdates.TotalTreasuryProfits,
 		globalUpdates.VaultBalance,
 		globalUpdates.TotalVaultProfits,
-		globalUpdates.TotalLiquidityRewards,
-		globalUpdates.TotalStakeRewards,
+		globalUpdates.TotalBlpRewards,
+		globalUpdates.TotalBluRewards,
+		globalUpdates.CurrentBlpRewards,
+		globalUpdates.CurrentBluRewards,
 	)
 
 	params := map[string]interface{}{
