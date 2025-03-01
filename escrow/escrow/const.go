@@ -35,6 +35,7 @@ var addressMap = map[string]string{
 	"":      "0x5FbDB2315678afecb367f032d93F642f64180aa3",
 	"31337": "0x5FbDB2315678afecb367f032d93F642f64180aa3", // anvil default
 	"17000": "0x73Ae6bC869286f0b0D67483538593adB15c7f66f",
+	"8453":  "0x88a03091ea64a90938d0f0906FeD15B57a36F5C8", //base
 }
 
 func getAddress(chainId string) (common.Address, error) {
