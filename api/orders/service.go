@@ -584,7 +584,7 @@ func SignedCloseOrderRequest(r *http.Request, supabaseClient *supabase.Client, p
 	}
 
 	closeFee := payoutValue * (dynamicLeverageFee(order_.Leverage) + dynamicUtilizationFee(order_.StartedAt, globalBorrowed, globalLiquidity))
-	payoutValue = payoutValue - closeFee
+	payoutValue = payoutValue - closeFee - collateral*(order_.Leverage-1)
 	if payoutValue < 0 {
 		payoutValue = 0
 	}
