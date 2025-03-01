@@ -273,8 +273,10 @@ func processLiquidation(globalBorrowed, globalLiquidity, borrowed, payout, close
 	orderUpdate.OrderGlobalUpdate.TotalTreasuryProfits += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.VaultBalance += *closeFee * 0.1
 	orderUpdate.OrderGlobalUpdate.TotalVaultProfits += *closeFee * 0.1
-	orderUpdate.OrderGlobalUpdate.TotalLiquidityRewards += *closeFee * 0.5
-	orderUpdate.OrderGlobalUpdate.TotalStakeRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.TotalBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.TotalBluRewards += *closeFee * 0.3
+	orderUpdate.OrderGlobalUpdate.CurrentBlpRewards += *closeFee * 0.5
+	orderUpdate.OrderGlobalUpdate.CurrentBluRewards += *closeFee * 0.3
 
 	printProcessedOrder(*order, *orderUpdate)
 }
@@ -303,8 +305,10 @@ func processLimit(globalBorrowed, globalLiquidity *float64, order *db.OrderRespo
 	orderUpdate.OrderGlobalUpdate.TotalTreasuryProfits += openFee * 0.1
 	orderUpdate.OrderGlobalUpdate.VaultBalance += openFee * 0.1
 	orderUpdate.OrderGlobalUpdate.TotalVaultProfits += openFee * 0.1
-	orderUpdate.OrderGlobalUpdate.TotalLiquidityRewards += openFee * 0.5
-	orderUpdate.OrderGlobalUpdate.TotalStakeRewards += openFee * 0.3
+	orderUpdate.OrderGlobalUpdate.TotalBlpRewards += openFee * 0.5
+	orderUpdate.OrderGlobalUpdate.TotalBluRewards += openFee * 0.3
+	orderUpdate.OrderGlobalUpdate.CurrentBlpRewards += openFee * 0.5
+	orderUpdate.OrderGlobalUpdate.CurrentBluRewards += openFee * 0.3
 
 	printProcessedOrder(*order, *orderUpdate)
 }
