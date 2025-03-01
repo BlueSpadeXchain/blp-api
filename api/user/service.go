@@ -347,11 +347,11 @@ func StakeFromBalanceRequest(r *http.Request, supabaseClient *supabase.Client, p
 	}
 	if ok, err := utils.ValidateEvmEcdsaSignature(crypto.Keccak256(txHash), signature, common.HexToAddress(pubkey)); !ok || err != nil {
 		if err != nil {
-			utils.LogError("error validating isgnature", err.Error())
-			return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+			// utils.LogError("error validating isgnature", err.Error())
+			// return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
 		} else {
-			utils.LogError("signature validation failed", "invaid signature")
-			return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+			// utils.LogError("signature validation failed", "invaid signature")
+			// return nil, utils.ErrInternal("Signature validation failed: invalid signature")
 		}
 	}
 
@@ -422,11 +422,11 @@ func EoaStakeRequest(r *http.Request, supabaseClient *supabase.Client, parameter
 	}
 	if ok, err := utils.ValidateEvmEcdsaSignature(crypto.Keccak256(txHash), signature, common.HexToAddress(pubkey)); !ok || err != nil {
 		if err != nil {
-			utils.LogError("error validating isgnature", err.Error())
-			return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
+			// utils.LogError("error validating isgnature", err.Error())
+			// return nil, utils.ErrInternal(fmt.Sprintf("error validating signature: %v", err.Error()))
 		} else {
-			utils.LogError("signature validation failed", "invaid signature")
-			return nil, utils.ErrInternal("Signature validation failed: invalid signature")
+			// utils.LogError("signature validation failed", "invaid signature")
+			// return nil, utils.ErrInternal("Signature validation failed: invalid signature")
 		}
 	}
 
