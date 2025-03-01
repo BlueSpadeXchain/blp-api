@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/BlueSpadeXchain/blp-api/escrow/escrow"
@@ -98,14 +99,27 @@ func main() {
 
 	logrus.SetFormatter(&CustomLogFormatter{})
 
+	var lastProcessedBlock uint64
+	defaultBlock := os.Getenv("GENESIS_BLOCK")
+	if defaultBlock == "" {
+		defaultBlock = "0" // Default to 0 if environment variable is not set
+	}
+	lastProcessedBlock_, err := strconv.ParseUint(defaultBlock, 10, 64)
+	if err != nil {
+		logrus.Errorf("Failed to parse GENESIS_BLOCK: %v. Using default value 0", err)
+		lastProcessedBlock = 0
+	} else {
+		lastProcessedBlock = lastProcessedBlock_
+	}
+
 	for {
-		run(chainIdFlag)
+		run(chainIdFlag, &lastProcessedBlock)
 		logrus.Error("Bot encountered an error. Restarting in 1 seconds...")
 		time.Sleep(time.Second)
 	}
 }
 
-func run(chainIdFlag *string) {
+func run(chainIdFlag *string, lastProcessedBlock *uint64) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			log.Printf("\nRecovered from panic: %v", rec)
@@ -132,6 +146,6 @@ func run(chainIdFlag *string) {
 		return
 	}
 
-	escrow.StartListener(jsonRpc, *chainIdFlag)
+	escrow.StartListener(jsonRpc, *chainIdFlag, lastProcessedBlock)
 
 }

@@ -119,7 +119,7 @@ protocol orders take priority
 - [x] handleResponse needs to be revisioned to use utils.Error instead of error
 - [x] change fee to be based off of leverage, instead of collateral
 - [x] add minimumum order side of 10 usd (handle with backend and show error)
-- [ ] log order change history events
+- [x] log order change history events
 - [x] free up any users to be able to use 1250x leverage
 - [ ] mainnet hosting/testing
   - [ ] required beta build and prod builds, ontop of the dev build
@@ -135,7 +135,7 @@ protocol orders take priority
 - [ ] 10x max leverage on specific position
 - [ ] prevent ordrs max payout to exceed global liquidity
   - [ ] create a global used liquidiity value (available/utilized liquidity)
-- [ ] need to add base mainnet to rpc const list
+- [x] need to add base mainnet to rpc const list
 - [x] test escrow withdraw function
 - [x] test escrow transfer function (used by withdraw?)
 - [ ] bot to convert funds into stable reserves, need to log this (global state variable)
