@@ -3,6 +3,7 @@ package infoHandler
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
@@ -67,4 +68,48 @@ func GetLatestMetricSnapshotRequest(r *http.Request, supabaseClient *supabase.Cl
 	}
 
 	return user, nil
+}
+
+type GetMetricsInRangeRequestParams struct {
+	StartTime string `query:"start-time"`
+	EndTime   string `query:"end-time"`
+}
+
+func GetMetricsInRangeRequest(r *http.Request, supabaseClient *supabase.Client, parameters ...*GetMetricsInRangeRequestParams) (interface{}, error) {
+	var params *GetMetricsInRangeRequestParams
+
+	if len(parameters) > 0 {
+		params = parameters[0]
+	} else {
+		params = &GetMetricsInRangeRequestParams{}
+	}
+
+	// Parse query parameters
+	query := r.URL.Query()
+	startTime := query.Get("start_time")
+	endTime := query.Get("end_time")
+
+	// Validate time parameters
+	if startTime == "" || endTime == "" {
+		return nil, utils.ErrInternal("Missing required parameters: start_time or end_time")
+	}
+
+	// Parse timestamps to ensure validity
+	_, err := time.Parse(time.RFC3339, params.StartTime)
+	if err != nil {
+		return nil, utils.ErrInternal("Invalid start_time format")
+	}
+
+	_, err = time.Parse(time.RFC3339, params.EndTime)
+	if err != nil {
+		return nil, utils.ErrInternal("Invalid end_time format")
+	}
+
+	// Fetch metrics from database
+	metrics, err := db.GetMetricsInRange(supabaseClient, params.StartTime, params.EndTime)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+
+	return metrics, nil
 }

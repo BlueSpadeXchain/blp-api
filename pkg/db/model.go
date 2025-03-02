@@ -280,3 +280,8 @@ type GetLatestMetricSnapshotResponse struct {
 	SnapshotTime CustomTime      `json:"snapshot_time"`
 	Metrics      MetricsResponse `json:"metrics"`
 }
+
+type GetMetricsInRangeResponse struct {
+	Timestamp time.Time `json:"timestamp"`
+	Metric    float64   `json:"metric"`
+}

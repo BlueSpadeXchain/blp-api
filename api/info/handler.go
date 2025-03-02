@@ -64,8 +64,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		case "get-latest-metrics-snapshot":
-			fmt.Printf("\n at least i got here")
 			response, err = GetLatestMetricSnapshotRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+		case "get-metrics-in-range":
+			response, err = GetMetricsInRangeRequest(r, supabaseClient)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
 		default:

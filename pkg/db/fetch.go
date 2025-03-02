@@ -333,3 +333,29 @@ func GetLatestMetricSnapshot(client *supabase.Client) (*GetLatestMetricSnapshotR
 
 	return &metrics, nil
 }
+
+func GetMetricsInRange(client *supabase.Client, startTime, endTime string) ([]GetMetricsInRangeResponse, error) {
+	// Prepare the payload
+	payload := map[string]interface{}{
+		"start_time": startTime,
+		"end_time":   endTime,
+	}
+
+	// Call Supabase RPC function
+	response := client.Rpc("get_metrics_in_range", "exact", payload)
+
+	// Handle possible Supabase error response
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	// Parse the successful response
+	var metrics []GetMetricsInRangeResponse
+	if err := json.Unmarshal([]byte(response), &metrics); err != nil {
+		return nil, fmt.Errorf("error unmarshalling metrics response: %v", err)
+	}
+
+	return metrics, nil
+}
