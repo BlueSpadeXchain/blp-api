@@ -63,6 +63,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			response, err = GetPairIdRequest(r)
 			HandleResponse(w, r, supabaseClient, response, err)
 			return
+		case "get-latest-metrics-snapshot":
+			fmt.Printf("\n at least i got here")
+			response, err = GetLatestMetricSnapshotRequest(r, supabaseClient)
+			HandleResponse(w, r, supabaseClient, response, err)
+			return
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(utils.ErrMalformedRequest("Invalid query parameter"))

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/BlueSpadeXchain/blp-api/pkg/db"
 	"github.com/BlueSpadeXchain/blp-api/pkg/utils"
+	"github.com/supabase-community/supabase-go"
 )
 
 func VersionRequest(r *http.Request, parameters ...interface{}) (interface{}, error) {
@@ -56,4 +58,13 @@ func GetPairIdRequest(r *http.Request, parameters ...*GetPairRequestParams) (int
 		PairId: pairId,
 	}, nil
 
+}
+
+func GetLatestMetricSnapshotRequest(r *http.Request, supabaseClient *supabase.Client) (interface{}, error) {
+	user, err := db.GetLatestMetricSnapshot(supabaseClient)
+	if err != nil {
+		return nil, utils.ErrInternal(err.Error())
+	}
+
+	return user, nil
 }

@@ -229,3 +229,54 @@ func (ct *CustomTime) UnmarshalJSON(b []byte) error {
 
 	return fmt.Errorf("error parsing time: %v", err)
 }
+
+type MetricsResponse struct {
+	TotalRevenue          float64 `json:"total_revenue"`
+	VaultBalance          float64 `json:"vault_balance"`
+	TotalBorrowed         float64 `json:"total_borrowed"`
+	TotalDeposits         float64 `json:"total_deposits"`
+	CurrentBalance        float64 `json:"current_balance"`
+	TotalLiquidity        float64 `json:"total_liquidity"`
+	TotalWithdrawn        float64 `json:"total_witdhrawn"`
+	CurrentBorrowed       float64 `json:"current_borrowed"`
+	OpenFeePercent        float64 `json:"open_fee_percent"`
+	TotalPnlLosses        float64 `json:"total_pnl_losses"`
+	TreasuryBalance       float64 `json:"treasury_balance"`
+	CloseFeePercent       float64 `json:"close_fee_percent"`
+	CurrentLiquidity      float64 `json:"current_liquidity"`
+	FeePercentStake       float64 `json:"fee_percent_stake"`
+	FeePercentVault       float64 `json:"fee_percent_vault"`
+	TotalBlpRewards       float64 `json:"total_blp_rewards"`
+	TotalBluRewards       float64 `json:"total_blu_rewards"`
+	TotalLiquidations     float64 `json:"total_liquidations"`
+	TotalPnlProfits       float64 `json:"total_pnl_profits"`
+	CurrentBlpStaked      float64 `json:"current_blp_staked"`
+	CurrentBluStaked      float64 `json:"current_blu_staked"`
+	TotalBlpUnstaked      float64 `json:"total_blp_unstaked"`
+	TotalBluUnstaked      float64 `json:"total_blu_unstaked"`
+	TotalOrdersLimit      float64 `json:"total_orders_limit"`
+	CurrentBlpPending     float64 `json:"current_blp_pending"`
+	CurrentBluPending     float64 `json:"current_blu_pending"`
+	CurrentBlpRewards     float64 `json:"current_blp_rewards"`
+	CurrentBluRewards     float64 `json:"current_blu_rewards"`
+	TotalOrdersActive     float64 `json:"total_orders_active"`
+	TotalOrdersClosed     float64 `json:"total_orders_closed"`
+	TotalOrdersFilled     float64 `json:"total_orders_filled"`
+	TotalOrdersSigned     float64 `json:"total_orders_signed"`
+	TotalVaultProfits     float64 `json:"total_vault_profits"`
+	CurrentOrdersLimit    float64 `json:"current_orders_limit"`
+	FeePercentTreasury    float64 `json:"fee_percent_treasury"`
+	TotalOrdersCreated    float64 `json:"total_orders_created"`
+	TotalOrdersStopped    float64 `json:"total_orders_stopped"`
+	CurrentOrdersActive   float64 `json:"current_order_active"`
+	FeePercentLiquidity   float64 `json:"fee_percent_liquidity"`
+	TotalOrdersCanceled   float64 `json:"total_orders_canceled"`
+	CurrentOrdersPending  float64 `json:"current_orders_pending"`
+	TotalTreasuryProfits  float64 `json:"total_treasury_profits"`
+	TotalOrdersLiquidated float64 `json:"total_orders_liquidated"`
+}
+
+type GetLatestMetricSnapshotResponse struct {
+	SnapshotTime CustomTime      `json:"snapshot_time"`
+	Metrics      MetricsResponse `json:"metrics"`
+}

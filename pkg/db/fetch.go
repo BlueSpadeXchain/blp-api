@@ -316,3 +316,20 @@ func GetPendingWithdrawalById(client *supabase.Client, withdrawalId string) (*Wi
 
 	return &withdrawalAndUser, nil
 }
+
+func GetLatestMetricSnapshot(client *supabase.Client) (*GetLatestMetricSnapshotResponse, error) {
+	response := client.Rpc("get_latest_metric_snapshot", "exact", "")
+
+	var supabaseError SupabaseError
+	if err := json.Unmarshal([]byte(response), &supabaseError); err == nil && supabaseError.Message != "" {
+		LogSupabaseError(supabaseError)
+		return nil, fmt.Errorf("supabase error: %v", supabaseError.Message)
+	}
+
+	var metrics GetLatestMetricSnapshotResponse
+	if err := json.Unmarshal([]byte(response), &metrics); err != nil {
+		return nil, fmt.Errorf("error unmarshalling user response: %v", err)
+	}
+
+	return &metrics, nil
+}
